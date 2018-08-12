@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="packages\tensorflow-gpu.1.10.0\build\tensorflow-gpu.props" Condition="Exists('packages\tensorflow-gpu.1.10.0\build\tensorflow-gpu.props')" />
+  <Import Project="packages\nvidia-cuda-90-sparse.9.0.0\build\nvidia-cuda-90-sparse.props" Condition="Exists('packages\nvidia-cuda-90-sparse.9.0.0\build\nvidia-cuda-90-sparse.props')" />
+  <Import Project="packages\nvidia-cuda-90-solver.9.0.0\build\nvidia-cuda-90-solver.props" Condition="Exists('packages\nvidia-cuda-90-solver.9.0.0\build\nvidia-cuda-90-solver.props')" />
+  <Import Project="packages\nvidia-cuda-90-rand.9.0.0\build\nvidia-cuda-90-rand.props" Condition="Exists('packages\nvidia-cuda-90-rand.9.0.0\build\nvidia-cuda-90-rand.props')" />
+  <Import Project="packages\nvidia-cuda-90-fft.9.0.0\build\nvidia-cuda-90-fft.props" Condition="Exists('packages\nvidia-cuda-90-fft.9.0.0\build\nvidia-cuda-90-fft.props')" />
+  <Import Project="packages\nvidia-cuda-90-cudnn-7.7.2.1\build\nvidia-cuda-90-cudnn-7.props" Condition="Exists('packages\nvidia-cuda-90-cudnn-7.7.2.1\build\nvidia-cuda-90-cudnn-7.props')" />
+  <Import Project="packages\nvidia-cuda-90-cudart.9.0.0\build\nvidia-cuda-90-cudart.props" Condition="Exists('packages\nvidia-cuda-90-cudart.9.0.0\build\nvidia-cuda-90-cudart.props')" />
+  <Import Project="packages\nvidia-cuda-90-blas.9.0.0\build\nvidia-cuda-90-blas.props" Condition="Exists('packages\nvidia-cuda-90-blas.9.0.0\build\nvidia-cuda-90-blas.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="debug|x64">
       <Configuration>debug</Configuration>
@@ -101,6 +108,13 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
+    <Error Condition="!Exists('packages\nvidia-cuda-90-blas.9.0.0\build\nvidia-cuda-90-blas.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-blas.9.0.0\build\nvidia-cuda-90-blas.props'))" />
+    <Error Condition="!Exists('packages\nvidia-cuda-90-cudart.9.0.0\build\nvidia-cuda-90-cudart.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-cudart.9.0.0\build\nvidia-cuda-90-cudart.props'))" />
+    <Error Condition="!Exists('packages\nvidia-cuda-90-cudnn-7.7.2.1\build\nvidia-cuda-90-cudnn-7.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-cudnn-7.7.2.1\build\nvidia-cuda-90-cudnn-7.props'))" />
+    <Error Condition="!Exists('packages\nvidia-cuda-90-fft.9.0.0\build\nvidia-cuda-90-fft.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-fft.9.0.0\build\nvidia-cuda-90-fft.props'))" />
+    <Error Condition="!Exists('packages\nvidia-cuda-90-rand.9.0.0\build\nvidia-cuda-90-rand.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-rand.9.0.0\build\nvidia-cuda-90-rand.props'))" />
+    <Error Condition="!Exists('packages\nvidia-cuda-90-solver.9.0.0\build\nvidia-cuda-90-solver.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-solver.9.0.0\build\nvidia-cuda-90-solver.props'))" />
+    <Error Condition="!Exists('packages\nvidia-cuda-90-sparse.9.0.0\build\nvidia-cuda-90-sparse.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\nvidia-cuda-90-sparse.9.0.0\build\nvidia-cuda-90-sparse.props'))" />
     <Error Condition="!Exists('packages\tensorflow-gpu.1.10.0\build\tensorflow-gpu.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\tensorflow-gpu.1.10.0\build\tensorflow-gpu.props'))" />
     <Error Condition="!Exists('packages\tensorflow-gpu.1.10.0\build\tensorflow-gpu.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\tensorflow-gpu.1.10.0\build\tensorflow-gpu.targets'))" />
   </Target>
