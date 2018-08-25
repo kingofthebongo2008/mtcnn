@@ -15,7 +15,7 @@ namespace tensorflow_c_api
 
         ~operation_description()
         {
-            TF_DeleteOper(m_value);
+
         }
 
         operation_description(operation_description&& o)
