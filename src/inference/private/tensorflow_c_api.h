@@ -6,3 +6,6 @@
 #include "tf_buffer.h"
 #include "tf_tensor.h"
 #include "tf_graph.h"
+#include "tf_session.h"
+#include "tf_library.h"
+#include "tf_api_def_map.h"
