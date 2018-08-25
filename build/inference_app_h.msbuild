@@ -5,6 +5,7 @@
 <ClInclude Include = "..\src\inference\private\tensorflow_c_api.h"/>
 <ClInclude Include = "..\src\inference\private\tf_base.h"/>
 <ClInclude Include = "..\src\inference\private\tf_buffer.h"/>
+<ClInclude Include = "..\src\inference\private\tf_graph.h"/>
 <ClInclude Include = "..\src\inference\private\tf_session_options.h"/>
 <ClInclude Include = "..\src\inference\private\tf_status.h"/>
 <ClInclude Include = "..\src\inference\private\tf_tensor.h"/>

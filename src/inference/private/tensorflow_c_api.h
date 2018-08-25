@@ -5,3 +5,4 @@
 #include "tf_session_options.h"
 #include "tf_buffer.h"
 #include "tf_tensor.h"
+#include "tf_graph.h"
