@@ -7,7 +7,6 @@ namespace tensorflow_c_api
     class buffer : private not_copyable
     {
     public:
-
         buffer()
         {
             m_value = TF_NewBuffer();
@@ -49,7 +48,6 @@ namespace tensorflow_c_api
         }
 
     private:
-
         TF_Buffer * m_value;
     };
 }

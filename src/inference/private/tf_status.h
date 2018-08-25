@@ -1,12 +1,15 @@
 #pragma once
 
+#include <cstdint>
+
 namespace tensorflow_c_api
 {
     class status : private not_copyable
     {
+
     public:
 
-        enum code : uint32_t
+        enum code : std::uint32_t
         {
             ok = TF_OK,
             canceled = TF_CANCELLED,
@@ -83,7 +86,6 @@ namespace tensorflow_c_api
         }
 
     private:
-
         TF_Status * m_status;
     };
 }
