@@ -9,7 +9,7 @@ namespace tensorflow_c_api
 
     public:
 
-        enum code : std::uint32_t
+        enum error_code : std::uint32_t
         {
             ok = TF_OK,
             canceled = TF_CANCELLED,
@@ -30,8 +30,8 @@ namespace tensorflow_c_api
             data_loss = TF_DATA_LOSS,
         };
 
-    private:
-        using status_code = code;
+    public:
+        
 
     public:
 
@@ -43,11 +43,6 @@ namespace tensorflow_c_api
         status(TF_Status* m)
         {
             m_status = m;
-        }
-
-        status(nullptr_t)
-        {
-            m_status = nullptr;
         }
 
         ~status()
@@ -75,9 +70,9 @@ namespace tensorflow_c_api
             return m_status;
         }
 
-        code code() const
+        error_code code() const
         {
-            return static_cast<status_code>(TF_GetCode(m_status));
+            return static_cast<error_code>(TF_GetCode(m_status));
         }
 
         const char* message() const

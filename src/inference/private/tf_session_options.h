@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tf_status.h"
+#include "tf_exception.h"
 
 namespace tensorflow_c_api
 {
@@ -38,11 +39,11 @@ namespace tensorflow_c_api
             TF_SetTarget(m_options, target);
         }
 
-        status set_config(const void* proto, size_t proto_len)
+        void set_config(const void* proto, size_t proto_len)
         {
-            status r(nullptr);
+            status r;
             TF_SetConfig(m_options, proto, proto_len, r);
-            return r;
+            throw_if_failed(r);
         }
 
         operator TF_SessionOptions *() const
