@@ -5,6 +5,10 @@
 
 int32_t main(int32_t, char**)
 {
-    std::unique_ptr<tensorflow_c_api::session_options> m = std::make_unique<tensorflow_c_api::session_options>();
+    using namespace tensorflow_c_api;
+    using namespace std;
+
+    unique_ptr<session_options> m = make_unique<session_options>();
+    unique_ptr<graph>           g = make_unique<graph>();
     return 0;
 }
