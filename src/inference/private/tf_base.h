@@ -47,37 +47,4 @@ namespace tensorflow_c_api
         uint32_t        = TF_UINT32,
         uint64_t        = TF_UINT64,
     };
-
-    struct operation
-    {
-        TF_Operation* m_o;
-
-        operator TF_Operation*() const
-        {
-            return m_o;
-        }
-    };
-
-    struct output
-    {
-        operation       m_o;
-        ::std::int32_t  m_index;
-
-        operator TF_Output () const
-        {
-            return TF_Output{ m_o, m_index };
-        }
-    };
-
-    struct input
-    {
-        operation       m_o;
-        ::std::int32_t  m_index;
-
-        operator TF_Output () const
-        {
-            return TF_Output{ m_o, m_index };
-        }
-    };
-
 }
