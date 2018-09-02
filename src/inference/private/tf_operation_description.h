@@ -159,22 +159,6 @@ namespace tensorflow_c_api
             TF_SetAttrTensorList(m_value, attr_name, values, num_values, s);
         }
 
-
-
-        /*
-
-        TF_CAPI_EXPORT extern void TF_SetAttrTensor(TF_OperationDescription* desc,
-            const char* attr_name,
-            TF_Tensor* value,
-            TF_Status* status);
-        TF_CAPI_EXPORT extern void TF_SetAttrTensorList(TF_OperationDescription* desc,
-            const char* attr_name,
-            TF_Tensor* const* values,
-            int num_values,
-            TF_Status* status);
-            TF_Status* status);
-        */
-
     private:
 
         TF_OperationDescription* m_value;
