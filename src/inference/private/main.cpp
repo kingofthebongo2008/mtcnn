@@ -1,8 +1,9 @@
 #include "pch.h"
 
-#include <tensorflow/contrib/lite/experimental/c/c_api.h>
 
 #include <memory>
+
+#include "tensorflow_lite_c_api.h"
 
 namespace tensorflow_lite_c_api
 {
@@ -14,8 +15,7 @@ namespace tensorflow_lite_c_api
         }
     };
 
-    using model = std::unique_ptr< TFL_Model, TFL_Model_Deleter >;
-
+    using model1 = std::unique_ptr< TFL_Model, TFL_Model_Deleter >;
 
     struct TFL_InterpreterOptions_Deleter
     {
@@ -27,7 +27,6 @@ namespace tensorflow_lite_c_api
 
     using interpreter_options = std::unique_ptr< TFL_InterpreterOptions, TFL_InterpreterOptions_Deleter >;
 
-
     struct TFL_Interpreter_Deleter
     {
         void operator()(void* v)
@@ -37,21 +36,18 @@ namespace tensorflow_lite_c_api
     };
 
     using interpreter = std::unique_ptr< TFL_Interpreter, TFL_Interpreter_Deleter >;
-
 }
-
-
 
 int32_t main(int32_t, char**)
 {
-    tensorflow_lite_c_api::model                m(TFL_NewModelFromFile("data/hello_world.tflite"));
+    tensorflow_lite_c_api::model                m("data/hello_world.tflite");
     tensorflow_lite_c_api::interpreter_options  o(TFL_NewInterpreterOptions());
     TFL_InterpreterOptionsSetNumThreads(o.get(), 4);
 
-    tensorflow_lite_c_api::interpreter          i(TFL_NewInterpreter(m.get(), o.get()));
+    tensorflow_lite_c_api::interpreter          i(TFL_NewInterpreter(m, o.get()));
 
     auto in                                     = TFL_InterpreterGetInputTensorCount(i.get());
-    auto out                                    = TFL_InterpreterGetInputTensorCount(i.get());
+    auto out                                    = TFL_InterpreterGetOutputTensorCount(i.get());
 
     auto t0                                     = TFL_InterpreterGetInputTensor(i.get(), 0);
     auto t1                                     = TFL_InterpreterGetOutputTensor(i.get(), 0);

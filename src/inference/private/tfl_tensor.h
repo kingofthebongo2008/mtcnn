@@ -2,7 +2,7 @@
 
 #include "tf_base.h"
 
-namespace tensorflow_c_api
+namespace tensorflow_lite_c_api
 {
     class tensor : private not_copyable
     {

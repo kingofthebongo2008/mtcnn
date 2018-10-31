@@ -1,11 +1,10 @@
 #pragma once
 
-#include "tf_status.h"
-#include "tf_exception.h"
+#include "tfl_exception.h"
 
-namespace tensorflow_c_api
+namespace tensorflow_lite_c_api
 {
-    class session_options : private not_copyable
+    class interpreter : private not_copyable
     {
     public:
 
