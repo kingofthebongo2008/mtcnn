@@ -6,7 +6,7 @@
 <ClInclude Include = "..\src\inference\private\tfl_base.h"/>
 <ClInclude Include = "..\src\inference\private\tfl_exception.h"/>
 <ClInclude Include = "..\src\inference\private\tfl_interpreter.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_interpreter_session_options.h"/>
+<ClInclude Include = "..\src\inference\private\tfl_interpreter_options.h"/>
 <ClInclude Include = "..\src\inference\private\tfl_model.h"/>
 <ClInclude Include = "..\src\inference\private\tfl_tensor.h"/>
 </ItemGroup> 
