@@ -1,54 +1,36 @@
 #include "pch.h"
 
-
 #include <memory>
 
 #include "tensorflow_lite_c_api.h"
 
-namespace tensorflow_lite_c_api
-{
-    struct TFL_Interpreter_Deleter
-    {
-        void operator()(void* v)
-        {
-            TFL_DeleteInterpreter(reinterpret_cast<TFL_Interpreter*>(v));
-        }
-    };
-
-    using interpreter = std::unique_ptr< TFL_Interpreter, TFL_Interpreter_Deleter >;
-}
-
 int32_t main(int32_t, char**)
 {
-    tensorflow_lite_c_api::model                m("data/hello_world.tflite");
-    tensorflow_lite_c_api::interpreter_options  o;
+    using namespace tensorflow_lite_c_api;
+
+    model                m("data/hello_world.tflite");
+    interpreter_options  o;
     
-    o.set_num_threads(4);
+    o.set_num_threads(8);
 
-    tensorflow_lite_c_api::interpreter          i(TFL_NewInterpreter(m, o));
+    interpreter          i(m, o);
 
-    auto in                                     = TFL_InterpreterGetInputTensorCount(i.get());
-    auto out                                    = TFL_InterpreterGetOutputTensorCount(i.get());
+    auto in                                     = i.get_input_tensor_count();
+    auto out                                    = i.get_output_tensor_count();
 
-    auto t0                                     = TFL_InterpreterGetInputTensor(i.get(), 0);
-    auto t1                                     = TFL_InterpreterGetOutputTensor(i.get(), 0);
+    auto t0                                     = input_tensor(i.get_input_tensor(0));
+    auto t1                                     = output_tensor(i.get_output_tensor(0));
 
-    auto s                                      = TFL_InterpreterAllocateTensors(i.get());
-
-    auto t2                                     = TFL_TensorData(t0);
-    auto t3                                     = TFL_TensorData(t1);
-
-    auto sz0 = TFL_TensorByteSize(t0);
-    auto sz1 = TFL_TensorByteSize(t1);
+    i.allocate_tensors();
 
     float x = 2.0f;
     float y = 0.0f;
 
-    auto s1                                     = TFL_TensorCopyFromBuffer(t0, &x, sizeof(x));
-    auto s2                                     = TFL_InterpreterInvoke(i.get());
-    auto s3                                     = TFL_TensorCopyToBuffer(t1, &y, sizeof(y));
-    
-    
+    t0.copy_from_buffer(&x, sizeof(x));
 
+    i.invoke();
+    
+    t1.copy_to_buffer(&y, sizeof(y));
+    
     return 0;
 }
