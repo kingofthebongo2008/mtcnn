@@ -7,26 +7,6 @@
 
 namespace tensorflow_lite_c_api
 {
-    struct TFL_Model_Deleter
-    {
-        void operator()(void* v)
-        {
-            TFL_DeleteModel( reinterpret_cast<TFL_Model*>(v) );
-        }
-    };
-
-    using model1 = std::unique_ptr< TFL_Model, TFL_Model_Deleter >;
-
-    struct TFL_InterpreterOptions_Deleter
-    {
-        void operator()(void* v)
-        {
-            TFL_DeleteInterpreterOptions(reinterpret_cast<TFL_InterpreterOptions*>(v));
-        }
-    };
-
-    using interpreter_options = std::unique_ptr< TFL_InterpreterOptions, TFL_InterpreterOptions_Deleter >;
-
     struct TFL_Interpreter_Deleter
     {
         void operator()(void* v)
@@ -41,10 +21,11 @@ namespace tensorflow_lite_c_api
 int32_t main(int32_t, char**)
 {
     tensorflow_lite_c_api::model                m("data/hello_world.tflite");
-    tensorflow_lite_c_api::interpreter_options  o(TFL_NewInterpreterOptions());
-    TFL_InterpreterOptionsSetNumThreads(o.get(), 4);
+    tensorflow_lite_c_api::interpreter_options  o;
+    
+    o.set_num_threads(4);
 
-    tensorflow_lite_c_api::interpreter          i(TFL_NewInterpreter(m, o.get()));
+    tensorflow_lite_c_api::interpreter          i(TFL_NewInterpreter(m, o));
 
     auto in                                     = TFL_InterpreterGetInputTensorCount(i.get());
     auto out                                    = TFL_InterpreterGetOutputTensorCount(i.get());
