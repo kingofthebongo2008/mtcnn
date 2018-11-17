@@ -166,19 +166,19 @@ int32_t main(int32_t, char*[])
     auto scales     = mtcnn::make_scales(w, h, mtcnn::minimum_face_size_px, mtcnn::initial_scale);
 
     auto m          = mtcnn::make_model("data/mtcnn.tflite");
+    
+
+    m.m_interpreter.allocate_tensors();
 
     for (auto& v : scales)
     {
-        auto ws         = std::ceilf(w * v);
-        auto hs         = std::ceilf(h * v);
-        auto img0       = opencv::normalize(r);
+        auto ws                     = std::ceilf(w * v);
+        auto hs                     = std::ceilf(h * v);
+        auto img0                   = opencv::normalize(r);
 
-        m.m_interpreter.allocate_tensors();
-
-        auto pnet                   = tensorflow_lite_c_api::input_tensor(m.m_interpreter.get_input_tensor(0));
+        auto pnet                   = tensorflow_lite_c_api::make_input_tensor(&m.m_interpreter, 0);
 
         auto d                      = pnet.num_dims();
-        int32_t s[4]                = { pnet.dim(0),pnet.dim(1),pnet.dim(2),pnet.dim(3) };
         int32_t size[4]             = { 1, ws, hs, 3 };
         pnet.copy_from_buffer(img0.data, opencv::byte_size(img0));
 
