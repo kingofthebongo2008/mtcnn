@@ -1,5 +1,7 @@
 #include "pch.h"
 
+#pragma optimize("",off)
+
 #include "tensorflow_lite_c_api.h"
 
 #include <iostream>
@@ -53,9 +55,9 @@ namespace
         auto in = i.get_input_tensor_count();
         auto out = i.get_output_tensor_count();
 
-        auto placeholder = input_tensor(i.get_input_tensor(0));
-        auto placeholder_1 = input_tensor(i.get_input_tensor(1));
-        auto placeholder_2 = input_tensor(i.get_input_tensor(2));
+        auto placeholder    = input_tensor(i.get_input_tensor(0));
+        auto placeholder_1  = input_tensor(i.get_input_tensor(1));
+        auto placeholder_2  = input_tensor(i.get_input_tensor(2));
 
 
         auto sz = placeholder.byte_size();
@@ -66,11 +68,11 @@ namespace opencv
 {
     using mat = cv::Mat;
 
-    cv::Mat resize(mat r, uint32_t w, uint32_t h)
+    mat resize(mat r, uint32_t w, uint32_t h)
     {
         mat m;
 
-        cv::resize(r, m,cv::Size(r.cols / 2, r.rows / 2));
+        cv::resize(r, m,cv::Size(w, h));
         return m;
     }
 
@@ -82,6 +84,23 @@ namespace opencv
     auto height(mat r)
     {
         return r.rows;
+    }
+
+    auto byte_size(mat r)
+    {
+        return r.step[0] * r.rows;
+    }
+
+    auto normalize( mat r )
+    {
+
+        mat o0;
+        r.convertTo(o0, CV_32FC3);
+
+        //convert from 0-255 bytes to floats in the [-1;1]
+        mat o1;
+        o1 = (o0 - 127.5f) * (1.0f / 128.0f);
+        return o1;
     }
 }
 
@@ -118,25 +137,52 @@ namespace mtcnn
 
         return scales;
     }
+
+    struct model
+    {
+        tensorflow_lite_c_api::model                m_model;
+        tensorflow_lite_c_api::interpreter_options  m_options;
+        tensorflow_lite_c_api::interpreter          m_interpreter;
+    };
+
+    model make_model(const char* model_file)
+    {
+        tensorflow_lite_c_api::model                m(model_file);
+        tensorflow_lite_c_api::interpreter_options  o;
+
+        o.set_num_threads(8);
+        tensorflow_lite_c_api::interpreter          i(m, o);
+        return { std::move(m), std::move(o), std::move(i) };
+    }
 }
 
-//#pragma optimize("",off)
+
 int32_t main(int32_t, char*[])
 { 
-    using namespace cv;
-    using namespace opencv;
+    auto r          = cv::imread("data/images/test1.jpg");
 
-    auto r  = imread("data/images/test1.jpg");
-
-    auto w          = width(r);
-    auto h          = height(r);
-
+    auto w          = opencv::width(r);
+    auto h          = opencv::height(r);
     auto scales     = mtcnn::make_scales(w, h, mtcnn::minimum_face_size_px, mtcnn::initial_scale);
 
+    auto m          = mtcnn::make_model("data/mtcnn.tflite");
 
     for (auto& v : scales)
     {
-        std::cout << "Scale" << v << "\n";
+        auto ws         = std::ceilf(w * v);
+        auto hs         = std::ceilf(h * v);
+        auto img0       = opencv::normalize(r);
+
+        m.m_interpreter.allocate_tensors();
+
+        auto pnet                   = tensorflow_lite_c_api::input_tensor(m.m_interpreter.get_input_tensor(0));
+
+        auto d                      = pnet.num_dims();
+        int32_t s[4]                = { pnet.dim(0),pnet.dim(1),pnet.dim(2),pnet.dim(3) };
+        int32_t size[4]             = { 1, ws, hs, 3 };
+        pnet.copy_from_buffer(img0.data, opencv::byte_size(img0));
+
+        m.m_interpreter.invoke();
     }
 
 

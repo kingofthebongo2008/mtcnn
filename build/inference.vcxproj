@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="packages\opencv.4.0.0\build\opencv.props" Condition="Exists('packages\opencv.4.0.0\build\opencv.props')" />
   <Import Project="packages\tensorflow-lite.1.11.0\build\tensorflow-lite.props" Condition="Exists('packages\tensorflow-lite.1.11.0\build\tensorflow-lite.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="debug|x64">
@@ -74,7 +75,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
@@ -94,6 +95,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="packages\tensorflow-lite.1.11.0\build\tensorflow-lite.targets" Condition="Exists('packages\tensorflow-lite.1.11.0\build\tensorflow-lite.targets')" />
+    <Import Project="packages\opencv.4.0.0\build\opencv.targets" Condition="Exists('packages\opencv.4.0.0\build\opencv.targets')" />
   </ImportGroup>
   <Import Project="inference_app_h.msbuild" />
   <Import Project="inference_app_cpp.msbuild" />
@@ -103,5 +105,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\tensorflow-lite.1.11.0\build\tensorflow-lite.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\tensorflow-lite.1.11.0\build\tensorflow-lite.props'))" />
     <Error Condition="!Exists('packages\tensorflow-lite.1.11.0\build\tensorflow-lite.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\tensorflow-lite.1.11.0\build\tensorflow-lite.targets'))" />
+    <Error Condition="!Exists('packages\opencv.4.0.0\build\opencv.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\opencv.4.0.0\build\opencv.props'))" />
+    <Error Condition="!Exists('packages\opencv.4.0.0\build\opencv.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\opencv.4.0.0\build\opencv.targets'))" />
   </Target>
 </Project>
