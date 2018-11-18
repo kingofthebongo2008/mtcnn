@@ -73,7 +73,7 @@ namespace tensorflow_lite_c_api
         output_tensor(output_tensor&& o) = default;
         output_tensor& operator=(output_tensor&& o) = default;
 
-        void copy_to_buffer(void* output_data, size_t output_data_size)
+        void copy_to_buffer(void* output_data, size_t output_data_size) const
         {
             throw_if_failed(TFL_TensorCopyToBuffer(m_value, output_data, output_data_size));
         }
