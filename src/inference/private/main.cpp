@@ -32,37 +32,39 @@ namespace
         float y = 0.0f;
 
         t0.copy_from_buffer(&x, sizeof(x));
-
         i.invoke();
-
         t1.copy_to_buffer(&y, sizeof(y));
-
         std::cout << "Result is " << y << std::endl;
-    }
-
-    void test_load_mtcnn_model()
-    {
-        using namespace tensorflow_lite_c_api;
-
-        model                m("data/mtcnn.tflite");
-        interpreter_options  o;
-
-        o.set_num_threads(8);
-
-        interpreter          i(m, o);
-
-        auto in = i.get_input_tensor_count();
-        auto out = i.get_output_tensor_count();
-
-        auto placeholder    = input_tensor(i.get_input_tensor(0));
-        auto placeholder_1  = input_tensor(i.get_input_tensor(1));
-        auto placeholder_2  = input_tensor(i.get_input_tensor(2));
-
-
-        auto sz = placeholder.byte_size();
     }
 }
 
+#include <xtensor/xarray.hpp>
+#include <xtensor/xview.hpp>
+#include <xtensor/xadapt.hpp>
+#include <xtensor/xio.hpp>
+
+namespace mtcnn
+{
+    struct numpy_wrapper
+    {
+        std::vector<float>  m_data;
+        xt::xarray<float>   m_numpy;
+    };
+
+    auto make_xtensor_4(const tensorflow_lite_c_api::output_tensor& tensor)
+    {
+        std::array<size_t, 4> shape = { tensor.dim(0), tensor.dim(1), tensor.dim(2), tensor.dim(3) };
+        auto size_in_floats         = tensor.byte_size() / sizeof(float);
+
+        numpy_wrapper w;
+        w.m_data.resize(size_in_floats);
+
+        tensor.copy_to_buffer(&w.m_data[0], tensor.byte_size() );
+        w.m_numpy = xt::adapt(w.m_data, shape);
+
+        return w;
+    }
+}
 
 int32_t main(int32_t, char*[])
 { 
@@ -71,29 +73,69 @@ int32_t main(int32_t, char*[])
     auto w          = opencv::width(r);
     auto h          = opencv::height(r);
     auto scales     = mtcnn::make_scales(w, h, mtcnn::minimum_face_size_px, mtcnn::initial_scale);
-
     auto m          = mtcnn::make_model("data/mtcnn.tflite");
-    
 
     m.m_interpreter.allocate_tensors();
-
-    for (auto& v : scales)
+    auto ot = m.m_interpreter.get_output_tensor_count();
+    if (true)
     {
-        auto ws                     = std::ceilf(w * v);
-        auto hs                     = std::ceilf(h * v);
-        auto img0                   = opencv::normalize(r);
+        for (auto& v : scales)
+        {
+            auto ws     = std::ceilf(w * v);
+            auto hs     = std::ceilf(h * v);
+            auto img0   = opencv::normalize(r);
 
-        auto pnet                   = tensorflow_lite_c_api::make_input_tensor(&m.m_interpreter, 0);
+            auto pnet_in = tensorflow_lite_c_api::make_input_tensor(&m.m_interpreter, 0);
 
-        auto d                      = pnet.num_dims();
-        int32_t size[4]             = { 1, ws, hs, 3 };
-        pnet.copy_from_buffer(img0.data, opencv::byte_size(img0));
+            auto s0 = pnet_in.byte_size();
+            auto s1 = opencv::byte_size(img0);
 
-        m.m_interpreter.invoke();
+            pnet_in.copy_from_buffer(img0.data, opencv::byte_size(img0));
+
+            auto pnet0 = tensorflow_lite_c_api::make_output_tensor(&m.m_interpreter, 0);
+            auto pnet1 = tensorflow_lite_c_api::make_output_tensor(&m.m_interpreter, 1);
+
+            m.m_interpreter.invoke();
+
+            auto pnet0_mat = mtcnn::make_xtensor_4(pnet0);
+            auto pnet1_mat = mtcnn::make_xtensor_4(pnet1);
+
+            auto view0  = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
+            auto view1  = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
+
+            auto shape0 = view0.shape();
+            auto shape1 = view1.shape();
+
+            auto v      = xt::where( view0 >= 0.8f );
+
+            auto v00 = view0[{0, 0}];
+            auto v01 = view0[{0, 1}];
+            auto v10 = view0[{1, 0}];
+            auto v11 = view0[{1, 1}];
+
+            //auto score = view0[v];
+
+            for (auto& i : v)
+            {
+                for (auto j : i)
+                {
+                    std::cout << j << std::endl;
+                }
+            }
+
+
+
+
+
+
+
+        }
     }
+
 
 
     return 0;
  }
 
 
+    
