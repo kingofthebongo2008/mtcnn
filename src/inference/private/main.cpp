@@ -40,6 +40,7 @@ namespace
 
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
+#include <xtensor/xindex_view.hpp>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xio.hpp>
 
@@ -81,14 +82,13 @@ int32_t main(int32_t, char*[])
     {
         for (auto& v : scales)
         {
-            auto ws     = std::ceilf(w * v);
-            auto hs     = std::ceilf(h * v);
-            auto img0   = opencv::normalize(r);
+            auto ws      = std::ceilf(w * v);
+            auto hs      = std::ceilf(h * v);
+            auto img0    = opencv::normalize(r);
 
             auto pnet_in = tensorflow_lite_c_api::make_input_tensor(&m.m_interpreter, 0);
-
-            auto s0 = pnet_in.byte_size();
-            auto s1 = opencv::byte_size(img0);
+            auto s0      = pnet_in.byte_size();
+            auto s1      = opencv::byte_size(img0);
 
             pnet_in.copy_from_buffer(img0.data, opencv::byte_size(img0));
 
@@ -97,30 +97,63 @@ int32_t main(int32_t, char*[])
 
             m.m_interpreter.invoke();
 
-            auto pnet0_mat = mtcnn::make_xtensor_4(pnet0);
-            auto pnet1_mat = mtcnn::make_xtensor_4(pnet1);
-
-            auto view0  = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
-            auto view1  = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
-
-            auto shape0 = view0.shape();
-            auto shape1 = view1.shape();
-
-            auto v      = xt::where( view0 >= 0.8f );
-
-            auto v00 = view0[{0, 0}];
-            auto v01 = view0[{0, 1}];
-            auto v10 = view0[{1, 0}];
-            auto v11 = view0[{1, 1}];
-
-            //auto score = view0[v];
-
-            for (auto& i : v)
+            //pnet
             {
-                for (auto j : i)
+                const float t = 0.8f;
+
+                auto pnet0_mat  = mtcnn::make_xtensor_4(pnet0);
+                auto pnet1_mat  = mtcnn::make_xtensor_4(pnet1);
+
+                auto imap       = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
+                auto reg        = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
+
+                auto dx1        = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 0));
+                auto dy1        = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 1));
+                auto dx2        = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 2));
+                auto dy2        = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 3));
+
+                auto yx         = xt::where(imap > t);
+                auto y          = yx[0];
+                auto x          = yx[1];
+
+                //auto score      = xt::index_view(imap,  std::make_tuple(y, x) );
+                auto score      = xt::index_view(imap, y);
+
+
+                for (auto i : score)
                 {
-                    std::cout << j << std::endl;
+                    auto f = i;
+                    std::cout << f << std::endl;
                 }
+
+                
+                /*
+                auto score      = xt::xarray<float>(filter(imap, yx));
+
+                auto dx1_f      = xt::xarray<float>(filter(dx1, yx));
+                auto dy1_f      = xt::xarray<float>(filter(dy1, yx));
+                auto dx2_f      = xt::xarray<float>(filter(dx2, yx));
+                auto dy2_f      = xt::xarray<float>(filter(dy2, yx));
+
+                reg             = xt::transpose(xt::stack(std::make_tuple(dx1_f, dy1_f, dx2_f, dy2_f), 0));
+                */
+
+                //auto b          = test.cbegin();
+                //auto e = test.cend();
+
+                //while (b++ != e)
+                {
+                //    std::cout << *b << std::endl;
+                }
+
+                //for (auto i : test)
+                {
+                    //auto f = i;
+                    //std::cout << f << std::endl;
+                }
+                
+                __debugbreak();
+                
             }
 
 
