@@ -64,7 +64,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
-      <AdditionalIncludeDirectories>../3rdparty</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rdparty/xtl/include;../3rdparty/xtensor/include;../3rdparty/gsl/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -83,7 +83,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
-      <AdditionalIncludeDirectories>../3rdparty</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../3rdparty/xtl/include;../3rdparty/xtensor/include;../3rdparty/gsl/include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
