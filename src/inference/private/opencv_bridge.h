@@ -6,7 +6,7 @@ namespace opencv
 {
     using mat = cv::Mat;
 
-    mat resize(mat r, uint32_t w, uint32_t h)
+    mat resize(const mat& r, uint32_t w, uint32_t h)
     {
         mat m;
 
@@ -14,24 +14,23 @@ namespace opencv
         return m;
     }
 
-    auto width(mat r)
+    auto width(const mat& r)
     {
         return r.cols;
     }
 
-    auto height(mat r)
+    auto height(const mat& r)
     {
         return r.rows;
     }
 
-    auto byte_size(mat r)
+    auto byte_size(const mat& r)
     {
-        return r.step[0] * r.rows;
+        return r.u->size;
     }
 
-    auto normalize(mat r)
+    auto normalize(const mat& r)
     {
-
         mat o0;
         r.convertTo(o0, CV_32FC3);
 
@@ -39,5 +38,11 @@ namespace opencv
         mat o1;
         o1 = (o0 - 127.5f) * (1.0f / 128.0f);
         return o1;
+    }
+
+    mat make_mat(int32_t dims, int32_t* sizes)
+    {
+        mat m(dims, sizes, CV_32FC1);
+        return m;
     }
 }
