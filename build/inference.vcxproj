@@ -65,6 +65,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <AdditionalIncludeDirectories>../3rdparty/xtl/include;../3rdparty/xtensor/include;../3rdparty/gsl/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -84,6 +85,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <AdditionalIncludeDirectories>../3rdparty/xtl/include;../3rdparty/xtensor/include;../3rdparty/gsl/include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
