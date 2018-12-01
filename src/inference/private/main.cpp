@@ -80,10 +80,9 @@ namespace mtcnn
         std::vector<float>    m_reg_dy1;
         std::vector<float>    m_reg_dx2;
         std::vector<float>    m_reg_dy2;
-
     };
 
-    bounding_boxes make_boxes(size_t s)
+    bounding_boxes make_boxes( size_t s )
     {
         bounding_boxes r;
 
@@ -103,6 +102,110 @@ namespace mtcnn
         return r;
     }
 
+    bounding_boxes compute_bounding_boxes( const tensorflow_lite_c_api::output_tensor& pnet0, const tensorflow_lite_c_api::output_tensor& pnet1, const float threshold = 0.8f, const float scale = 1.0f)
+    {
+        auto pnet0_mat = mtcnn::make_xtensor_4(pnet0);
+        auto pnet1_mat = mtcnn::make_xtensor_4(pnet1);
+
+        auto imap = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
+        auto reg = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
+
+        auto dx1 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 0));
+        auto dy1 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 1));
+        auto dx2 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 2));
+        auto dy2 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 3));
+
+        const float t           = threshold;
+        const float s           = scale;
+        const auto  stride      = 2;
+        const auto  cell_size   = 12;
+        
+        auto yx = xt::where(imap > t); //filter
+        xt::xarray<size_t> y = xt::adapt(yx[0]);
+        xt::xarray<size_t> x = xt::adapt(yx[1]);
+
+        auto b = y.size();
+        auto boxes = make_boxes(b);
+
+        //suitable for concurrent execution
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = imap[{y[i], x[i]}];
+                boxes.m_score[i] = value;
+            }
+        }
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = static_cast<uint32_t>(std::roundf((y[i] * stride + 1) / scale));
+                boxes.m_y0[i] = value;
+            }
+        }
+
+        {
+            //todo: y1 can be deduced from y0
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = static_cast<uint32_t> (std::roundf((y[i] * stride + cell_size - 1) / scale));
+                boxes.m_y1[i] = value;
+            }
+        }
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = static_cast<uint32_t>(std::roundf((x[i] * stride + 1) / scale));
+                boxes.m_x0[i] = value;
+            }
+        }
+
+
+        {
+            //todo: x1 can be deduced from x0
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = static_cast<uint32_t>(std::roundf((x[i] * stride + cell_size - 1) / scale));
+                boxes.m_x1[i] = value;
+            }
+        }
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = dx1[{y[i], x[i]}];
+                boxes.m_reg_dx1[i] = value;
+            }
+        }
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = dy1[{y[i], x[i]}];
+                boxes.m_reg_dy1[i] = value;
+            }
+        }
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = dx2[{y[i], x[i]}];
+                boxes.m_reg_dx2[i] = value;
+            }
+        }
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = dy2[{y[i], x[i]}];
+                boxes.m_reg_dy2[i] = value;
+            }
+        }
+
+        return boxes;
+    }
 
 }
 
@@ -138,118 +241,10 @@ int32_t main(int32_t, char*[])
 
             m.m_interpreter.invoke();
 
-            //pnet
-            {
-                auto pnet0_mat      = mtcnn::make_xtensor_4(pnet0);
-                auto pnet1_mat      = mtcnn::make_xtensor_4(pnet1);
+            mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1);
 
-                auto imap           = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
-                auto reg            = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
-
-                auto dx1            = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 0));
-                auto dy1            = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 1));
-                auto dx2            = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 2));
-                auto dy2            = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 3));
-
-                const float t       = 0.8f;
-                const float scale   = 1.0f;
-
-
-                auto yx		         = xt::where(imap > t);
-                xt::xarray<size_t> y = xt::adapt(yx[0]); 
-                xt::xarray<size_t> x = xt::adapt(yx[1]);
-
-                auto b               = y.size();
-                auto boxes           = mtcnn::make_boxes(b);
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = imap[{y[i], x[i]}];
-                        boxes.m_score[i] = value;
-                    }
-                }
-
-                const auto          stride      = 2;
-                const auto          cell_size   = 12;
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = static_cast<uint32_t>(std::roundf((y[i] * stride + 1) / scale));
-                        boxes.m_y0[i]   = value;
-                    }
-                }
-
-                {
-                    //todo: y1 can be deduced from y0
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = static_cast<uint32_t> (std::roundf((y[i] * stride + cell_size - 1) / scale));
-                        boxes.m_y1[i] = value;
-                    }
-                }
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = static_cast<uint32_t>(std::roundf((x[i] * stride + 1) / scale));
-                        boxes.m_x0[i] = value;
-                    }
-                }
-
-
-                {
-                    //todo: x1 can be deduced from x0
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = static_cast<uint32_t>(std::roundf((x[i] * stride + cell_size - 1) / scale));
-                        boxes.m_x1[i] = value;
-                    }
-                }
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = dx1[{y[i], x[i]}];
-                        boxes.m_reg_dx1[i] = value;
-                    }
-                }
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = dy1[{y[i], x[i]}];
-                        boxes.m_reg_dy1[i] = value;
-                    }
-                }
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = dx2[{y[i], x[i]}];
-                        boxes.m_reg_dx2[i] = value;
-                    }
-                }
-
-                {
-                    for (auto i = 0; i < b; ++i)
-                    {
-                        auto value = dy2[{y[i], x[i]}];
-                        boxes.m_reg_dy2[i] = value;
-                    }
-                }
-
-                __debugbreak();
+            __debugbreak();
                 
-            }
-
-
-
-
-
-
-
         }
     }
 
