@@ -84,6 +84,27 @@ namespace mtcnn
         {
             return m_score.size(); // all vectors match
         }
+
+        bool empty()
+        {
+            return m_score.empty();
+        }
+
+        void append(const bounding_boxes& b)
+        {
+            m_x0.insert(m_x0.end(), b.m_x0.cbegin(), m_x0.cend());
+            m_x1.insert(m_x1.end(), b.m_x1.cbegin(), m_x1.cend());
+
+            m_y0.insert(m_y0.end(), b.m_y0.cbegin(), m_y0.cend());
+            m_y1.insert(m_y1.end(), b.m_y1.cbegin(), m_y1.cend());
+
+            m_score.insert(m_score.end(), b.m_score.cbegin(), m_score.cend());
+
+            m_reg_dx1.insert(m_reg_dx1.end(), b.m_reg_dx1.cbegin(), m_reg_dx1.cend());
+            m_reg_dy1.insert(m_reg_dy1.end(), b.m_reg_dy1.cbegin(), m_reg_dy1.cend());
+            m_reg_dx2.insert(m_reg_dx2.end(), b.m_reg_dx2.cbegin(), m_reg_dx2.cend());
+            m_reg_dy2.insert(m_reg_dy2.end(), b.m_reg_dy1.cbegin(), m_reg_dy2.cend());
+        }
     };
 
     bounding_boxes make_boxes( size_t s )
@@ -399,7 +420,7 @@ namespace mtcnn
             }
             else
             {
-                uint16_t a0 = static_cast<float>(area[i]);
+                float a0 = static_cast<float>(area[i]);
 
                 o = fold<float>(inter, index_view(area, idx), [a0](const uint16_t a, const uint16_t b)
                 {
@@ -418,6 +439,26 @@ namespace mtcnn
     
         return pick;
     }
+
+    bounding_boxes index_bounding_boxes(const bounding_boxes& b, const std::vector<uint16_t> indices)
+    {
+        bounding_boxes r;
+
+        r.m_x0      = index_view(b.m_x0, indices);
+        r.m_x1      = index_view(b.m_x1, indices);
+        r.m_y0      = index_view(b.m_y0, indices);
+        r.m_y1      = index_view(b.m_y1, indices);
+
+        r.m_score   = index_view(b.m_score, indices);
+
+        r.m_reg_dx1 = index_view(b.m_reg_dx1, indices);
+        r.m_reg_dy1 = index_view(b.m_reg_dy1, indices);
+        r.m_reg_dx2 = index_view(b.m_reg_dx2, indices);
+        r.m_reg_dy2 = index_view(b.m_reg_dy2, indices);
+
+        return r;
+    }
+
 }
 
 int32_t main(int32_t, char*[])
@@ -435,6 +476,8 @@ int32_t main(int32_t, char*[])
 
     if (true)
     {
+        mtcnn::bounding_boxes total_boxes;
+
         for (auto& v : scales)
         {
             auto ws      = std::ceilf(w * v);
@@ -453,10 +496,16 @@ int32_t main(int32_t, char*[])
             m.m_interpreter.invoke();
 
             mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1);
-            auto                  pick = mtcnn::nms(boxes, mtcnn::nms_method::union_value, 0.5f);
 
-            __debugbreak();
-                
+            if (!boxes.empty())
+            {
+                auto                  pick = mtcnn::nms(boxes, mtcnn::nms_method::union_value, 0.5f);
+
+                if (!pick.empty())
+                {
+                    total_boxes.append(mtcnn::index_bounding_boxes(boxes, pick));
+                }
+            }
         }
     }
 
