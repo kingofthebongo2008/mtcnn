@@ -68,18 +68,22 @@ namespace mtcnn
 
     struct bounding_boxes
     {
-        std::vector<uint32_t> m_x0;
-        std::vector<uint32_t> m_x1;
+        std::vector<uint16_t> m_x0;
+        std::vector<uint16_t> m_x1;
 
-        std::vector<uint32_t> m_y0;
-        std::vector<uint32_t> m_y1;
-
+        std::vector<uint16_t> m_y0;
+        std::vector<uint16_t> m_y1;
         std::vector<float>    m_score;
 
         std::vector<float>    m_reg_dx1;
         std::vector<float>    m_reg_dy1;
         std::vector<float>    m_reg_dx2;
         std::vector<float>    m_reg_dy2;
+
+        size_t size() const
+        {
+            return m_score.size(); // all vectors match
+        }
     };
 
     bounding_boxes make_boxes( size_t s )
@@ -140,7 +144,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint32_t>(std::roundf((y[i] * stride + 1) / scale));
+                auto value = static_cast<uint16_t>(std::roundf((y[i] * stride + 1) / scale));
                 boxes.m_y0[i] = value;
             }
         }
@@ -149,7 +153,7 @@ namespace mtcnn
             //todo: y1 can be deduced from y0
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint32_t> (std::roundf((y[i] * stride + cell_size - 1) / scale));
+                auto value = static_cast<uint16_t> (std::roundf((y[i] * stride + cell_size - 1) / scale));
                 boxes.m_y1[i] = value;
             }
         }
@@ -157,19 +161,19 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint32_t>(std::roundf((x[i] * stride + 1) / scale));
+                auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + 1) / scale));
                 boxes.m_x0[i] = value;
             }
         }
 
 
         {
-            //todo: x1 can be deduced from x0
-            for (auto i = 0; i < b; ++i)
-            {
-                auto value = static_cast<uint32_t>(std::roundf((x[i] * stride + cell_size - 1) / scale));
-                boxes.m_x1[i] = value;
-            }
+        //todo: x1 can be deduced from x0
+        for (auto i = 0; i < b; ++i)
+        {
+            auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + cell_size - 1) / scale));
+            boxes.m_x1[i] = value;
+        }
         }
 
         {
@@ -203,10 +207,217 @@ namespace mtcnn
                 boxes.m_reg_dy2[i] = value;
             }
         }
-
         return boxes;
     }
 
+    std::vector<uint16_t> argsort(const std::vector<float>& score)
+    {
+        std::vector<uint16_t> sorted_s;
+
+        sorted_s.resize(score.size());
+
+        std::generate(sorted_s.begin(), sorted_s.end(),
+            []()
+        {
+            static uint16_t i = 0;
+            return i++;
+        });
+
+        std::sort(sorted_s.begin(), sorted_s.end(), [&score](auto&& a, auto&& b)
+        {
+            return score[a] < score[b];
+        });
+
+        return sorted_s;
+    }
+
+    template <typename r, typename op >
+    std::vector<r> fold(const uint16_t c, const std::vector<uint16_t>& v, op o)
+    {
+        std::vector<r> res(v.size());
+
+        for (auto i = 0U; i < v.size(); ++i)
+        {
+            res[i] = (o(c, v[i]));
+        }
+        return res;
+    }
+
+    template <typename r, typename op >
+    std::vector<r> fold(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1, op o)
+    {
+        std::vector<r>  res(v0.size());
+
+        for (auto i = 0U; i < v0.size(); ++i)
+        {
+            res[i] = (o(v0[i], v1[i]));
+        }
+        return res;
+    }
+
+    template <typename op >
+    std::vector<uint16_t> where_index(const std::vector<float>& v0, op o)
+    {
+        std::vector<uint16_t>  res;
+        res.reserve(v0.size());
+
+        for (auto i = 0U; i < v0.size(); ++i)
+        {
+            if (o(v0[i]))
+            {
+                res.push_back(i);
+            }
+        }
+        return res;
+    }
+
+    std::vector<uint16_t> maximum(const uint16_t c, const std::vector<uint16_t>& v)
+    {
+        return fold<uint16_t> (c, v, [](const uint16_t a, const uint16_t b)
+        {
+            return static_cast<uint16_t> (std::max(a, b));
+        });
+    }
+
+    std::vector<uint16_t> maximum(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    {
+        return fold<uint16_t>(v0, v1, [](const uint16_t a, const uint16_t b)
+        {
+            return static_cast<uint16_t> (std::max(a, b));
+        });
+    }
+
+    std::vector<uint16_t> minimum(const uint16_t c, const std::vector<uint16_t>& v)
+    {
+        return fold<uint16_t>(c, v, [](const uint16_t a, const uint16_t b)
+        {
+            return (std::min(a, b));
+        });
+    }
+
+    std::vector<uint16_t> minimum(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    {
+        return fold<uint16_t>(v0, v1, [](const uint16_t a, const uint16_t b)
+        {
+            return static_cast<uint16_t>(std::min(a, b));
+        });
+    }
+
+    std::vector<uint16_t> mul(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    {
+        return fold<uint16_t>(v0, v1, [](const uint16_t a, const uint16_t b)
+        {
+            return static_cast<uint16_t>(a) * static_cast<uint16_t>(b);
+        });
+    }
+
+    std::vector<float> div(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    {
+        return fold<float>(v0, v1, [](const uint16_t a, const uint16_t b)
+        {
+            return static_cast<float>(a) / static_cast<float>(b);
+        });
+    }
+
+    template <typename r>    std::vector<r> index_view(const std::vector<r>& values, const std::vector<uint16_t>& indices)
+    {
+        std::vector<r> res(indices.size());
+
+        for (auto i = 0U; i < indices.size(); ++i)
+        {
+            res[i] = values[indices[i]];
+        }
+        return res;
+    }
+
+    enum class nms_method : uint32_t
+    {
+        minimum_value = 0,
+        union_value   = 1
+    };
+
+    
+    std::vector<uint16_t> nms( const bounding_boxes& s, const nms_method m, const float threshold = 0.8f )
+    {
+        using v16    = std::vector<uint16_t>;
+        v16 sorted_s = argsort(s.m_score);
+        v16 pick;
+        pick.reserve(s.size());
+
+        auto&& x1 = s.m_x0;
+        auto&& y1 = s.m_y0;
+        auto&& x2 = s.m_x1;
+        auto&& y2 = s.m_y1;
+
+        v16 area;
+
+        {
+            v16 w0 = fold<uint16_t>(x1, x2, [](const uint16_t x1, const uint16_t x2)
+            {
+                return static_cast<uint16_t>(std::max<int32_t>(0, x2 - x1 + 1));
+            });
+
+            v16 h0 = fold<uint16_t>(y1, y2, [](const uint16_t y1, const uint16_t y2)
+            {
+                return static_cast<uint16_t>(std::max<int32_t>(0, y2 - y1 + 1));
+            });
+
+            area = mul( w0, h0 );
+        }
+        
+        while (!sorted_s.empty())
+        {
+            auto i  = sorted_s.back();
+
+            pick.push_back(i);
+            sorted_s.pop_back();
+
+            const auto& idx = sorted_s;
+
+            v16 xx1 = maximum(x1[i], index_view(x1, idx));
+            v16 yy1 = maximum(y1[i], index_view(y1, idx));
+
+            v16 xx2 = minimum(x2[i], index_view(x2, idx));
+            v16 yy2 = minimum(y2[i], index_view(y2, idx));
+
+            v16 w   = fold<uint16_t>(xx1, xx2, [] ( const uint16_t x1, const uint16_t x2)
+            {
+                return static_cast<uint16_t>(std::max<int32_t>(0, x2 - x1 + 1));
+            });
+
+            v16 h  = fold<uint16_t>(yy1, yy2, [](const uint16_t y1, const uint16_t y2)
+            {
+                return static_cast<uint16_t>(std::max<int32_t>(0, y2 - y1 + 1));
+            });
+
+            v16 inter = mul( w, h );
+            std::vector<float> o;
+
+            if ( m == nms_method::minimum_value)
+            {
+                o = div( inter, minimum(area[i], index_view(area, idx)) );
+            }
+            else
+            {
+                uint16_t a0 = static_cast<float>(area[i]);
+
+                o = fold<float>(inter, index_view(area, idx), [a0](const uint16_t a, const uint16_t b)
+                {
+                    return ( static_cast<float>( a ) / (a0 + b - a));
+                });
+            }
+
+            v16 filtered = where_index( o, [threshold](const float v)
+            {
+                return v < threshold;
+            });
+
+            sorted_s = index_view(sorted_s, filtered);
+
+        }
+    
+        return pick;
+    }
 }
 
 int32_t main(int32_t, char*[])
@@ -242,6 +453,7 @@ int32_t main(int32_t, char*[])
             m.m_interpreter.invoke();
 
             mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1);
+            auto                  pick = mtcnn::nms(boxes, mtcnn::nms_method::union_value, 0.5f);
 
             __debugbreak();
                 
