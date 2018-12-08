@@ -132,13 +132,13 @@ namespace mtcnn
         auto pnet0_mat = mtcnn::make_xtensor_4(pnet0);
         auto pnet1_mat = mtcnn::make_xtensor_4(pnet1);
 
-        auto imap = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
-        auto reg = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
+        auto imap   = xt::transpose(xt::view(pnet0_mat.m_numpy, 0, xt::all(), xt::all(), 1));
+        auto reg    = xt::view(pnet1_mat.m_numpy, 0, xt::all(), xt::all(), xt::all());
 
-        auto dx1 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 0));
-        auto dy1 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 1));
-        auto dx2 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 2));
-        auto dy2 = xt::transpose(xt::view(reg, xt::all(), xt::all(), xt::all(), 3));
+        auto dx1    = xt::transpose(xt::view(reg, xt::all(), xt::all(), 0));
+        auto dy1    = xt::transpose(xt::view(reg, xt::all(), xt::all(), 1));
+        auto dx2    = xt::transpose(xt::view(reg, xt::all(), xt::all(), 2));
+        auto dy2    = xt::transpose(xt::view(reg, xt::all(), xt::all(), 3));
 
         const float t           = threshold;
         const float s           = scale;
@@ -149,8 +149,8 @@ namespace mtcnn
         xt::xarray<size_t> y = xt::adapt(yx[0]);
         xt::xarray<size_t> x = xt::adapt(yx[1]);
 
-        auto b = y.size();
-        auto boxes = make_boxes(b);
+        auto b      = y.size();
+        auto boxes  = make_boxes(b);
 
         //suitable for concurrent execution
 
@@ -459,6 +459,62 @@ namespace mtcnn
         return r;
     }
 
+    std::array< model, 13> make_models()
+    {
+        constexpr std::array< const char*, 13> file_names =
+        {
+            "data/pnet_960_1536.tflite",
+            "data/pnet_672_1076.tflite",
+            "data/pnet_471_753.tflite",
+            "data/pnet_330_527.tflite",
+            "data/pnet_231_369.tflite",
+            "data/pnet_162_259.tflite",
+            "data/pnet_113_181.tflite",
+            "data/pnet_080_127.tflite",
+            "data/pnet_056_089.tflite",
+            "data/pnet_039_062.tflite",
+            "data/pnet_028_044.tflite",
+            "data/pnet_019_031.tflite",
+            "data/pnet_014_022.tflite"
+        };
+
+        return
+        {
+            mtcnn::make_model(file_names[0]),
+            mtcnn::make_model(file_names[1]),
+            mtcnn::make_model(file_names[2]),
+            mtcnn::make_model(file_names[3]),
+
+            mtcnn::make_model(file_names[4]),
+            mtcnn::make_model(file_names[5]),
+            mtcnn::make_model(file_names[6]),
+            mtcnn::make_model(file_names[7]),
+
+            mtcnn::make_model(file_names[8]),
+            mtcnn::make_model(file_names[9]),
+            mtcnn::make_model(file_names[10]),
+            mtcnn::make_model(file_names[11]),
+
+            mtcnn::make_model(file_names[12])
+        };
+    }
+
+    struct models_database
+    {
+        std::array< model, 13> m_models = make_models();
+    };
+
+    models_database make_models_database()
+    {
+        models_database m;
+
+        for (auto i = 0; i < 13; ++i)
+        {
+            m.m_models[i].m_interpreter.allocate_tensors();
+        }
+
+        return m;
+    }
 }
 
 int32_t main(int32_t, char*[])
@@ -467,33 +523,42 @@ int32_t main(int32_t, char*[])
 
     auto w          = opencv::width(r);
     auto h          = opencv::height(r);
+
+    if (w != 2560 || h != 1600)
+    {
+        std::cerr << "Required width and height are 2560 x 1600" << std::endl;
+        return -1;
+    }
+
     auto scales     = mtcnn::make_scales(w, h, mtcnn::minimum_face_size_px, mtcnn::initial_scale);
-    auto m          = mtcnn::make_model("data/mtcnn.tflite");
+    auto models     = mtcnn::make_models_database();
+    
 
-    m.m_interpreter.allocate_tensors();
-    auto ot = m.m_interpreter.get_output_tensor_count();
-
-
+    
     if (true)
     {
         mtcnn::bounding_boxes total_boxes;
 
-        for (auto& v : scales)
+        for (auto i = 0U; i < scales.size(); ++i)
         {
+            auto v       = scales[i];
             auto ws      = std::ceilf(w * v);
             auto hs      = std::ceilf(h * v);
-            auto img0    = opencv::normalize(r);
+            auto img0    = opencv::normalize( opencv::resize(r, ws, hs) );
+            auto inter   = &models.m_models[i].m_interpreter;
 
-            auto pnet_in = tensorflow_lite_c_api::make_input_tensor(&m.m_interpreter, 0);
+            auto pnet_in = tensorflow_lite_c_api::make_input_tensor(inter, 0);
             auto s0      = pnet_in.byte_size();
             auto s1      = opencv::byte_size(img0);
 
             pnet_in.copy_from_buffer(img0.data, opencv::byte_size(img0));
 
-            auto pnet0 = tensorflow_lite_c_api::make_output_tensor(&m.m_interpreter, 0);
-            auto pnet1 = tensorflow_lite_c_api::make_output_tensor(&m.m_interpreter, 1);
+            auto pnet0    = tensorflow_lite_c_api::make_output_tensor(inter, 0);
+            auto pnet1    = tensorflow_lite_c_api::make_output_tensor(inter, 1);
 
-            m.m_interpreter.invoke();
+            auto d        = pnet0.num_dims();
+            
+            inter->invoke();
 
             mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1);
 

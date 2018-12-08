@@ -14,20 +14,20 @@ namespace mtcnn
     const float minimum_face_size_px = 20;
     const float initial_scale = 0.7f;
 
-    inline std::vector< float > make_scales(uint32_t width, uint32_t height, float min_face_size_px, float factor)
+    inline std::vector< double > make_scales(uint32_t width, uint32_t height, float min_face_size_px, float factor)
     {
-        auto minl = std::min<float>(static_cast<float>(width), static_cast<float>(height));
-        auto m = 12.0f / std::max<float>(min_face_size_px, 12.0f);
+        auto minl = std::min<double>(static_cast<double>(width), static_cast<double>(height));
+        auto m = 12.0f / std::max<double>(min_face_size_px, 12.0f);
 
         //create scale pyramid
-        std::vector<float> scales;
+        std::vector<double> scales;
 
         auto factor_count = 0.0f;
 
         minl = minl * m;
         while (minl >= 12.0f)
         {
-            auto scale = m * std::powf(factor, factor_count);
+            auto scale = m * std::pow(factor, factor_count);
             scales.push_back(scale);
 
             minl = minl * factor;

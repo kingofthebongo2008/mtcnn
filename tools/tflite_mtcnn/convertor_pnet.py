@@ -7,62 +7,64 @@ pnet_output_node_names  = ['softmax/Reshape_1', 'pnet/conv4-2/BiasAdd']
 output_graph            ='pnet.pb'
 shape_pnet              = [1, 1600, 2560, 3]
 
-960
-1536
 
-672
-1076
+#960
+#1536
 
-471
-753
+#672
+#1076
 
-330
-527
+#471
+#753
 
-231
-369
+#330
+#527
 
-162
-259
+#231
+#369
 
-113
-181
+#162
+#259
 
-80
-127
+#113
+#181
 
-56
-89
+#80
+#127
 
-39
-62
+#56
+#89
 
-28
-44
+#39
+#62
 
-19
-31
+#28
+#44
 
-14
-22
+#19
+#31
+
+#14
+#22
+
 
 shape_pnets             = [
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
+                            [1, 960, 1536, 3],
+                            [1, 672, 1076, 3] ,
+                            [1, 471, 753, 3],
+                            [1, 330, 527, 3],
 
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
+                            [1, 231, 369, 3],
+                            [1, 162, 259, 3],
+                            [1, 113, 181, 3],
+                            [1, 80, 127, 3 ],
 
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
-                            { 1, 1600, 2560, 3 },
+                            [1, 56, 89, 3 ],
+                            [1, 39, 62, 3 ],
+                            [1, 28, 44, 3 ],
+                            [1, 19, 31, 3 ],
                             
-                            { 1, 1600, 2560, 3 }
+                            [ 1, 14, 22, 3 ]
 
                           ]
 
@@ -78,17 +80,7 @@ with tf.Session(config=config) as sess:
     saver = tf.train.import_meta_graph('./all_in_one/mtcnn-3000000.meta', clear_devices=True)
     saver.restore(sess, './all_in_one/mtcnn-3000000')
 
-    #tf.train.write_graph(sess.graph_def, './tmp/mtcnn', 'model.pbtxt')
-    
-    #export_dir = './tmp/all_in_one'
-    #builder = tf.saved_model.builder.SavedModelBuilder(export_dir)
-    #builder.add_meta_graph_and_variables(sess, [tf.saved_model.tag_constants.TRAINING], strip_default_attrs=True)
-    #builder.add_meta_graph([tf.saved_model.tag_constants.SERVING], strip_default_attrs=True)
-    #builder.save()
-
     subgraph = tf.graph_util.extract_sub_graph(tf.get_default_graph().as_graph_def(), pnet_input_node_names + pnet_output_node_names)
-    #tf.reset_default_graph()
-    #tf.import_graph_def(subgraph)
 
     # We use a built-in TF helper to export variables to constants
     output_graph_def = tf.graph_util.convert_variables_to_constants( sess,  subgraph, output_node_names) 
@@ -98,9 +90,20 @@ with tf.Session(config=config) as sess:
 
     print("%d ops in the final graph." % len(output_graph_def.node))
 
-    converter = lite.TocoConverter.from_frozen_graph( output_graph, input_node_names, output_node_names, input_shapes )
-    tflite_model = converter.convert()
-    open("pnet.tflite", "wb").write(tflite_model)
+
+    for index in range(0,13):
+
+        shape       = shape_pnets[index]
+        
+        height      = shape[1]
+        width       = shape[2]
+
+        input_shape = {"Placeholder" : shape }
+        file_name   = 'pnet_{:03}_{:03}.tflite'.format(height, width) 
+
+        converter = lite.TocoConverter.from_frozen_graph( output_graph, input_node_names, output_node_names, input_shape )
+        tflite_model = converter.convert()
+        open(file_name, "wb").write(tflite_model)
 
 
 
