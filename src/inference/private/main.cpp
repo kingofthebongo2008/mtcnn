@@ -7,37 +7,6 @@
 #include "opencv_bridge.h"
 #include "mtcnn_bridge.h"
 
-namespace
-{
-    void test_hello_world()
-    {
-        using namespace tensorflow_lite_c_api;
-
-        model                m("data/hello_world.tflite");
-        interpreter_options  o;
-
-        o.set_num_threads(8);
-
-        interpreter          i(m, o);
-
-        auto in = i.get_input_tensor_count();
-        auto out = i.get_output_tensor_count();
-
-        auto t0 = input_tensor(i.get_input_tensor(0));
-        auto t1 = output_tensor(i.get_output_tensor(0));
-
-        i.allocate_tensors();
-
-        float x = 2.0f;
-        float y = 0.0f;
-
-        t0.copy_from_buffer(&x, sizeof(x));
-        i.invoke();
-        t1.copy_to_buffer(&y, sizeof(y));
-        std::cout << "Result is " << y << std::endl;
-    }
-}
-
 #include <xtensor/xarray.hpp>
 #include <xtensor/xview.hpp>
 #include <xtensor/xindex_view.hpp>
@@ -127,7 +96,7 @@ namespace mtcnn
         return r;
     }
 
-    bounding_boxes compute_bounding_boxes( const tensorflow_lite_c_api::output_tensor& pnet0, const tensorflow_lite_c_api::output_tensor& pnet1, const float threshold = 0.8f, const float scale = 1.0f)
+    bounding_boxes compute_bounding_boxes( const tensorflow_lite_c_api::output_tensor& pnet0, const tensorflow_lite_c_api::output_tensor& pnet1, const float scale = 1.0f, const float threshold = 0.8f)
     {
         auto pnet0_mat = mtcnn::make_xtensor_4(pnet0);
         auto pnet1_mat = mtcnn::make_xtensor_4(pnet1);
@@ -195,9 +164,6 @@ namespace mtcnn
                 boxes.m_y2[i] = value;
             }
         }
-
-        
-
 
 
         {
@@ -462,10 +428,11 @@ namespace mtcnn
         return r;
     }
 
-    std::array< model, 13> make_models()
+    std::array< model, 14> make_models()
     {
-        constexpr std::array< const char*, 13> file_names =
+        constexpr std::array< const char*, 14> file_names =
         {
+            "data/pnet_1600_2560.tflite",
             "data/pnet_960_1536.tflite",
             "data/pnet_672_1076.tflite",
             "data/pnet_471_753.tflite",
@@ -498,25 +465,19 @@ namespace mtcnn
             mtcnn::make_model(file_names[10]),
             mtcnn::make_model(file_names[11]),
 
-            mtcnn::make_model(file_names[12])
+            mtcnn::make_model(file_names[12]),
+            mtcnn::make_model(file_names[13])
         };
     }
 
     struct models_database
     {
-        std::array< model, 13> m_models = make_models();
+        std::array< model, 14> m_models = make_models();
     };
 
     models_database make_models_database()
     {
-        models_database m;
-
-        for (auto i = 0; i < 13; ++i)
-        {
-            m.m_models[i].m_interpreter.allocate_tensors();
-        }
-
-        return m;
+        return models_database();
     }
 }
 
@@ -540,6 +501,13 @@ void print_array(const char* file_name, std::vector<float>& v)
     }
 }
 
+xt::xarray<float> make_xtensor_2(float* data, uint32_t w, uint32_t h)
+{
+    std::array<size_t, 3> shape = { static_cast<size_t>(h), static_cast<size_t>(w), 3 };
+
+    return  xt::adapt(data, w * h * 3 , xt::no_ownership(), shape);
+}
+
 int32_t main(int32_t, char*[])
 { 
     auto r          = cv::imread("data/images/test1.jpg");
@@ -557,7 +525,6 @@ int32_t main(int32_t, char*[])
     auto models     = mtcnn::make_models_database();
 
     auto  m0        = mtcnn::make_model("data/mtcnn.tflite");
-    m0.m_interpreter.allocate_tensors();
     
 
     
@@ -565,14 +532,13 @@ int32_t main(int32_t, char*[])
     {
         mtcnn::bounding_boxes total_boxes;
 
-        for (auto i = 0U; i < scales.size(); ++i)
+        for (auto i = 1U; i < scales.size(); ++i)
         {
-            auto v       = 1.0;// scales[i];
+            auto v       = scales[i];
             auto ws      = std::ceilf(w * v);
             auto hs      = std::ceilf(h * v);
-            auto img0    = opencv::normalize( opencv::resize(r, ws, hs) );
-            //auto inter   = &models.m_models[i].m_interpreter;
-            auto inter   = &m0.m_interpreter;
+            auto img0    = opencv::normalize(opencv::resample(r, hs, ws));
+            auto inter   = &models.m_models[i].m_interpreter;
 
             auto pnet_in = tensorflow_lite_c_api::make_input_tensor(inter, 0);
             auto s0      = pnet_in.byte_size();
@@ -583,11 +549,9 @@ int32_t main(int32_t, char*[])
             auto pnet0    = tensorflow_lite_c_api::make_output_tensor(inter, 0);
             auto pnet1    = tensorflow_lite_c_api::make_output_tensor(inter, 1);
 
-            auto d        = pnet0.num_dims();
-            
             inter->invoke();
 
-            mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1, 0.8, v);
+            mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1, v, 0.8f);
 
             print_array("score.txt", boxes.m_score);
             print_array("x1.txt", boxes.m_x1);
