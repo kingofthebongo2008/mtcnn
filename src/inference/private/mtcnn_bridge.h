@@ -24,6 +24,8 @@ namespace mtcnn
 
         auto factor_count = 0.0f;
 
+        scales.push_back(1.0f);
+
         minl = minl * m;
         while (minl >= 12.0f)
         {
@@ -52,6 +54,7 @@ namespace mtcnn
 
         o.set_num_threads(8);
         tensorflow_lite_c_api::interpreter          i(m, o);
+        i.allocate_tensors();
         return { std::move(m), std::move(o), std::move(i) };
     }
 
