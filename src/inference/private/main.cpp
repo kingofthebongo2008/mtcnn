@@ -68,11 +68,11 @@ namespace mtcnn
 
     struct bounding_boxes
     {
-        std::vector<uint16_t> m_x0;
         std::vector<uint16_t> m_x1;
+        std::vector<uint16_t> m_x2;
 
-        std::vector<uint16_t> m_y0;
         std::vector<uint16_t> m_y1;
+        std::vector<uint16_t> m_y2;
         std::vector<float>    m_score;
 
         std::vector<float>    m_reg_dx1;
@@ -92,11 +92,11 @@ namespace mtcnn
 
         void append(const bounding_boxes& b)
         {
-            m_x0.insert(m_x0.end(), b.m_x0.cbegin(), m_x0.cend());
             m_x1.insert(m_x1.end(), b.m_x1.cbegin(), m_x1.cend());
+            m_x2.insert(m_x2.end(), b.m_x2.cbegin(), m_x2.cend());
 
-            m_y0.insert(m_y0.end(), b.m_y0.cbegin(), m_y0.cend());
             m_y1.insert(m_y1.end(), b.m_y1.cbegin(), m_y1.cend());
+            m_y2.insert(m_y2.end(), b.m_y2.cbegin(), m_y2.cend());
 
             m_score.insert(m_score.end(), b.m_score.cbegin(), m_score.cend());
 
@@ -111,11 +111,11 @@ namespace mtcnn
     {
         bounding_boxes r;
 
-        r.m_x0.resize(s);
         r.m_x1.resize(s);
+        r.m_x2.resize(s);
 
-        r.m_y0.resize(s);
         r.m_y1.resize(s);
+        r.m_y2.resize(s);
 
         r.m_score.resize(s);
 
@@ -145,9 +145,9 @@ namespace mtcnn
         const auto  stride      = 2;
         const auto  cell_size   = 12;
         
-        auto yx = xt::where(imap > t); //filter
-        xt::xarray<size_t> y = xt::adapt(yx[0]);
-        xt::xarray<size_t> x = xt::adapt(yx[1]);
+        auto yx              = xt::where(imap >= t); //filter
+        xt::xarray<size_t> y = xt::adapt(yx[1]);
+        xt::xarray<size_t> x = xt::adapt(yx[0]);
 
         auto b      = y.size();
         auto boxes  = make_boxes(b);
@@ -157,7 +157,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = imap[{y[i], x[i]}];
+                auto value = imap[{x[i], y[i]}];
                 boxes.m_score[i] = value;
             }
         }
@@ -166,15 +166,6 @@ namespace mtcnn
             for (auto i = 0; i < b; ++i)
             {
                 auto value = static_cast<uint16_t>(std::roundf((y[i] * stride + 1) / scale));
-                boxes.m_y0[i] = value;
-            }
-        }
-
-        {
-            //todo: y1 can be deduced from y0
-            for (auto i = 0; i < b; ++i)
-            {
-                auto value = static_cast<uint16_t> (std::roundf((y[i] * stride + cell_size - 1) / scale));
                 boxes.m_y1[i] = value;
             }
         }
@@ -183,24 +174,36 @@ namespace mtcnn
             for (auto i = 0; i < b; ++i)
             {
                 auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + 1) / scale));
-                boxes.m_x0[i] = value;
+                boxes.m_x1[i] = value;
             }
         }
 
 
         {
-        //todo: x1 can be deduced from x0
-        for (auto i = 0; i < b; ++i)
-        {
-            auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + cell_size - 1) / scale));
-            boxes.m_x1[i] = value;
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + cell_size - 1 + 1) / scale));
+                boxes.m_x2[i] = value;
+            }
         }
-        }
+
 
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = dx1[{y[i], x[i]}];
+                auto value = static_cast<uint16_t> (std::roundf((y[i] * stride + cell_size - 1 + 1) / scale));
+                boxes.m_y2[i] = value;
+            }
+        }
+
+        
+
+
+
+        {
+            for (auto i = 0; i < b; ++i)
+            {
+                auto value = dx1[{x[i], y[i]}];
                 boxes.m_reg_dx1[i] = value;
             }
         }
@@ -208,7 +211,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = dy1[{y[i], x[i]}];
+                auto value = dy1[{x[i], y[i]}];
                 boxes.m_reg_dy1[i] = value;
             }
         }
@@ -216,7 +219,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = dx2[{y[i], x[i]}];
+                auto value = dx2[{x[i], y[i]}];
                 boxes.m_reg_dx2[i] = value;
             }
         }
@@ -224,7 +227,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = dy2[{y[i], x[i]}];
+                auto value = dy2[{x[i], y[i]}];
                 boxes.m_reg_dy2[i] = value;
             }
         }
@@ -365,10 +368,10 @@ namespace mtcnn
         v16 pick;
         pick.reserve(s.size());
 
-        auto&& x1 = s.m_x0;
-        auto&& y1 = s.m_y0;
-        auto&& x2 = s.m_x1;
-        auto&& y2 = s.m_y1;
+        auto&& x1 = s.m_x1;
+        auto&& y1 = s.m_y1;
+        auto&& x2 = s.m_x2;
+        auto&& y2 = s.m_y2;
 
         v16 area;
 
@@ -444,10 +447,10 @@ namespace mtcnn
     {
         bounding_boxes r;
 
-        r.m_x0      = index_view(b.m_x0, indices);
         r.m_x1      = index_view(b.m_x1, indices);
-        r.m_y0      = index_view(b.m_y0, indices);
+        r.m_x2      = index_view(b.m_x2, indices);
         r.m_y1      = index_view(b.m_y1, indices);
+        r.m_y2      = index_view(b.m_y2, indices);
 
         r.m_score   = index_view(b.m_score, indices);
 
@@ -517,6 +520,26 @@ namespace mtcnn
     }
 }
 
+void print_array(const char* file_name, std::vector<uint16_t>& v)
+{
+    std::ofstream f(file_name, std::ofstream::out);
+
+    for (auto& i : v)
+    {
+        f << i << "\n";
+    }
+}
+
+void print_array(const char* file_name, std::vector<float>& v)
+{
+    std::ofstream f(file_name, std::ofstream::out);
+
+    for (auto& i : v)
+    {
+        f << std::setprecision(5) << std::fixed << i << "\n";
+    }
+}
+
 int32_t main(int32_t, char*[])
 { 
     auto r          = cv::imread("data/images/test1.jpg");
@@ -532,6 +555,9 @@ int32_t main(int32_t, char*[])
 
     auto scales     = mtcnn::make_scales(w, h, mtcnn::minimum_face_size_px, mtcnn::initial_scale);
     auto models     = mtcnn::make_models_database();
+
+    auto  m0        = mtcnn::make_model("data/mtcnn.tflite");
+    m0.m_interpreter.allocate_tensors();
     
 
     
@@ -541,11 +567,12 @@ int32_t main(int32_t, char*[])
 
         for (auto i = 0U; i < scales.size(); ++i)
         {
-            auto v       = scales[i];
+            auto v       = 1.0;// scales[i];
             auto ws      = std::ceilf(w * v);
             auto hs      = std::ceilf(h * v);
             auto img0    = opencv::normalize( opencv::resize(r, ws, hs) );
-            auto inter   = &models.m_models[i].m_interpreter;
+            //auto inter   = &models.m_models[i].m_interpreter;
+            auto inter   = &m0.m_interpreter;
 
             auto pnet_in = tensorflow_lite_c_api::make_input_tensor(inter, 0);
             auto s0      = pnet_in.byte_size();
@@ -560,7 +587,20 @@ int32_t main(int32_t, char*[])
             
             inter->invoke();
 
-            mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1);
+            mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1, 0.8, v);
+
+            print_array("score.txt", boxes.m_score);
+            print_array("x1.txt", boxes.m_x1);
+            print_array("y1.txt", boxes.m_y1);
+
+            print_array("x2.txt", boxes.m_x2);
+            print_array("y2.txt", boxes.m_y2);
+
+            print_array("dx1.txt", boxes.m_reg_dx1);
+            print_array("dy1.txt", boxes.m_reg_dy1);
+
+            print_array("dx2.txt", boxes.m_reg_dx2);
+            print_array("dy2.txt", boxes.m_reg_dy2);
 
             if (!boxes.empty())
             {
