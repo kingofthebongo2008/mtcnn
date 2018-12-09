@@ -49,6 +49,7 @@ shape_pnet              = [1, 1600, 2560, 3]
 
 
 shape_pnets             = [
+                            [1, 1600, 2560, 3],
                             [1, 960, 1536, 3],
                             [1, 672, 1076, 3] ,
                             [1, 471, 753, 3],
@@ -91,7 +92,7 @@ with tf.Session(config=config) as sess:
     print("%d ops in the final graph." % len(output_graph_def.node))
 
 
-    for index in range(0,13):
+    for index in range(0,14):
 
         shape       = shape_pnets[index]
         
