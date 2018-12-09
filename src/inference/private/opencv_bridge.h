@@ -10,7 +10,15 @@ namespace opencv
     {
         mat m;
 
-        cv::resize(r, m, cv::Size(w, h));
+        cv::resize(r, m, cv::Size(w, h), 0.0, 0.0, cv::INTER_LINEAR);
+        return m;
+    }
+
+    mat resample(const mat& r, uint32_t h, uint32_t w)
+    {
+        mat m;
+
+        cv::resize(r, m, cv::Size(w, h), 0.0, 0.0, cv::INTER_AREA);
         return m;
     }
 
@@ -36,7 +44,8 @@ namespace opencv
 
         //convert from 0-255 bytes to floats in the [-1;1]
         mat o1;
-        o1 = (o0 - 127.5f) * (1.0f / 128.0f);
+        o1 = (o0 - 127.5f) * (1.0f /  128.0f);
+
         return o1;
     }
 
