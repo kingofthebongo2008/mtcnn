@@ -26,8 +26,8 @@ namespace mtcnn
         return sorted_s;
     }
 
-    template <typename r, typename op >
-    std::vector<r> fold(const uint16_t c, const std::vector<uint16_t>& v, op o)
+    template <typename r, typename a, typename op >
+    std::vector<r> fold(const uint16_t c, const std::vector<a>& v, op o)
     {
         std::vector<r> res(v.size());
 
@@ -38,8 +38,8 @@ namespace mtcnn
         return res;
     }
 
-    template <typename r, typename op >
-    std::vector<r> fold(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1, op o)
+    template <typename r, typename a, typename b, typename op >
+    std::vector<r> fold(const std::vector<a>& v0, const std::vector<b>& v1, op o)
     {
         std::vector<r>  res(v0.size());
 
@@ -50,10 +50,10 @@ namespace mtcnn
         return res;
     }
 
-    template <typename op >
-    std::vector<uint16_t> where_index(const std::vector<float>& v0, op o)
+    template <typename r, typename a, typename op >
+    std::vector<r> where_index(const std::vector<a>& v0, op o)
     {
-        std::vector<uint16_t>  res;
+        std::vector<r>  res;
         res.reserve(v0.size());
 
         for (auto i = 0U; i < v0.size(); ++i)
@@ -66,35 +66,40 @@ namespace mtcnn
         return res;
     }
 
-    std::vector<uint16_t> maximum(const uint16_t c, const std::vector<uint16_t>& v)
+    template <typename r, typename a>
+    std::vector<r> maximum(const uint16_t c, const std::vector<a>& v)
     {
-        return fold<uint16_t>(c, v, [](const uint16_t a, const uint16_t b)
+        return fold<uint16_t>(c, v, [](const uint16_t x, const a y)
         {
-            return static_cast<uint16_t> (std::max(a, b));
+            return static_cast<uint16_t> (std::max(x, y));
         });
     }
 
-    std::vector<uint16_t> maximum(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+
+    template <typename r, typename a, typename b>
+    std::vector<r> maximum(const std::vector<a>& v0, const std::vector<b>& v1)
     {
-        return fold<uint16_t>(v0, v1, [](const uint16_t a, const uint16_t b)
+        return fold<r>(v0, v1, [](const a x, const b y)
         {
-            return static_cast<uint16_t> (std::max(a, b));
+            return static_cast<r> (std::max(x, y));
         });
     }
 
-    std::vector<uint16_t> minimum(const uint16_t c, const std::vector<uint16_t>& v)
+    template <typename r, typename a>
+    std::vector<r> minimum(const uint16_t c, const std::vector<a>& v)
     {
-        return fold<uint16_t>(c, v, [](const uint16_t a, const uint16_t b)
+        return fold<r>(c, v, [](const uint16_t x, const a y)
         {
-            return (std::min(a, b));
+            return (std::min(x, y));
         });
     }
 
-    std::vector<uint16_t> minimum(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    template <typename r, typename a, typename b>
+    std::vector<r> minimum(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
     {
-        return fold<uint16_t>(v0, v1, [](const uint16_t a, const uint16_t b)
+        return fold<r>(v0, v1, [](const a x, const b y)
         {
-            return static_cast<uint16_t>(std::min(a, b));
+            return static_cast<uint16_t>(std::min(x, y));
         });
     }
 
