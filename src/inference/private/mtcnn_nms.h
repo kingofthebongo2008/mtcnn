@@ -1,5 +1,6 @@
 #pragma once
 
+#pragma optimize("",off)
 #include <vector>
 
 #include "mtcnn_bounding_boxes.h"
@@ -16,6 +17,8 @@ namespace mtcnn
     std::vector<uint16_t> nms(const bounding_boxes& s, const nms_method m, const float threshold = 0.8f)
     {
         using v16 = std::vector<uint16_t>;
+        using v32 = std::vector<uint32_t>;
+
         v16 sorted_s = argsort(s.m_score);
         v16 pick;
         pick.reserve(s.size());
@@ -25,20 +28,22 @@ namespace mtcnn
         auto&& x2 = s.m_x2;
         auto&& y2 = s.m_y2;
 
-        v16 area;
+        v32 area;
 
         {
-            v16 w0 = fold<uint16_t>(x1, x2, [](const uint16_t x1, const uint16_t x2)
+            v16 w0 = fold<uint16_t>(x1, x2, [](const uint32_t x1, const uint32_t x2)
             {
+
                 return static_cast<uint16_t>(std::max<int32_t>(0, x2 - x1 + 1));
             });
 
-            v16 h0 = fold<uint16_t>(y1, y2, [](const uint16_t y1, const uint16_t y2)
+            v16 h0 = fold<uint16_t>(y1, y2, [](const uint32_t y1, const uint32_t y2)
             {
+
                 return static_cast<uint16_t>(std::max<int32_t>(0, y2 - y1 + 1));
             });
 
-            area = mul(w0, h0);
+            area = mul<uint32_t>(w0, h0);
         }
 
         while (!sorted_s.empty())
@@ -56,28 +61,29 @@ namespace mtcnn
             v16 xx2 = minimum<uint16_t>(x2[i], index_view(x2, idx));
             v16 yy2 = minimum<uint16_t>(y2[i], index_view(y2, idx));
 
-            v16 w = fold<uint16_t>(xx1, xx2, [](const uint16_t x1, const uint16_t x2)
+            v16 w = fold<uint16_t>(xx1, xx2, [](const uint32_t x1, const uint32_t x2)
             {
                 return static_cast<uint16_t>(std::max<int32_t>(0, x2 - x1 + 1));
             });
 
-            v16 h = fold<uint16_t>(yy1, yy2, [](const uint16_t y1, const uint16_t y2)
+            v16 h = fold<uint16_t>(yy1, yy2, [](const uint32_t y1, const uint32_t y2)
             {
                 return static_cast<uint16_t>(std::max<int32_t>(0, y2 - y1 + 1));
             });
 
-            v16 inter = mul(w, h);
+            v32 inter = mul<uint32_t>(w, h);
+
             std::vector<float> o;
 
             if (m == nms_method::minimum_value)
             {
-                o = div(inter, minimum<uint16_t>(area[i], index_view(area, idx)));
+                o = div<float>(inter, minimum<uint32_t>(area[i], index_view(area, idx)));
             }
             else
             {
                 float a0 = static_cast<float>(area[i]);
 
-                o = fold<float>(inter, index_view(area, idx), [a0](const uint16_t a, const uint16_t b)
+                o = fold<float>(inter, index_view(area, idx), [a0](const uint32_t a, const uint32_t b)
                 {
                     return (static_cast<float>(a) / (a0 + b - a));
                 });

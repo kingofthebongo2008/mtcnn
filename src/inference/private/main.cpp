@@ -111,7 +111,7 @@ int32_t main(int32_t, char*[])
     {
         mtcnn::bounding_boxes total_boxes;
 
-        for (auto i = 9U; i < scales.size(); ++i)
+        for (auto i = 6U; i < scales.size(); ++i)
         {
             auto v       = scales[i];
             auto ws      = std::ceilf(w * v);
