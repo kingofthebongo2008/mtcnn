@@ -63,6 +63,7 @@ namespace mtcnn
                 res.push_back(i);
             }
         }
+        return res;
     }
 
     std::vector<uint16_t> maximum(const uint16_t c, const std::vector<uint16_t>& v)
