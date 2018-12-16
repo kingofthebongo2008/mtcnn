@@ -30,18 +30,17 @@ namespace mtcnn
 
         void append(const bounding_boxes& b)
         {
-            m_x1.insert(m_x1.end(), b.m_x1.cbegin(), m_x1.cend());
-            m_x2.insert(m_x2.end(), b.m_x2.cbegin(), m_x2.cend());
+            std::copy(b.m_x1.cbegin(), b.m_x1.cend(), std::back_inserter(m_x1));
+            std::copy(b.m_x2.cbegin(), b.m_x2.cend(), std::back_inserter(m_x2));
+            std::copy(b.m_y1.cbegin(), b.m_y1.cend(), std::back_inserter(m_y1));
+            std::copy(b.m_y2.cbegin(), b.m_y2.cend(), std::back_inserter(m_y2));
 
-            m_y1.insert(m_y1.end(), b.m_y1.cbegin(), m_y1.cend());
-            m_y2.insert(m_y2.end(), b.m_y2.cbegin(), m_y2.cend());
+            std::copy(b.m_reg_dx1.cbegin(), b.m_reg_dx1.cend(), std::back_inserter(m_reg_dx1));
+            std::copy(b.m_reg_dx2.cbegin(), b.m_reg_dx2.cend(), std::back_inserter(m_reg_dx2));
+            std::copy(b.m_reg_dy1.cbegin(), b.m_reg_dy1.cend(), std::back_inserter(m_reg_dy1));
+            std::copy(b.m_reg_dy2.cbegin(), b.m_reg_dy2.cend(), std::back_inserter(m_reg_dy2));
 
-            m_score.insert(m_score.end(), b.m_score.cbegin(), m_score.cend());
-
-            m_reg_dx1.insert(m_reg_dx1.end(), b.m_reg_dx1.cbegin(), m_reg_dx1.cend());
-            m_reg_dy1.insert(m_reg_dy1.end(), b.m_reg_dy1.cbegin(), m_reg_dy1.cend());
-            m_reg_dx2.insert(m_reg_dx2.end(), b.m_reg_dx2.cbegin(), m_reg_dx2.cend());
-            m_reg_dy2.insert(m_reg_dy2.end(), b.m_reg_dy1.cbegin(), m_reg_dy2.cend());
+            std::copy(b.m_score.cbegin(), b.m_score.cend(), std::back_inserter(m_score));
         }
     };
 
