@@ -1,6 +1,6 @@
 #include "pch.h"
 
-//#pragma optimize("",off)
+#pragma optimize("",off)
 
 #include <iostream>
 
@@ -106,11 +106,12 @@ int32_t main(int32_t, char*[])
     
 
     
+    //phase 1
     if (true)
     {
         mtcnn::bounding_boxes total_boxes;
 
-        for (auto i = 1U; i < scales.size(); ++i)
+        for (auto i = 9U; i < scales.size(); ++i)
         {
             auto v       = scales[i];
             auto ws      = std::ceilf(w * v);
@@ -131,22 +132,24 @@ int32_t main(int32_t, char*[])
 
             mtcnn::bounding_boxes boxes = mtcnn::compute_bounding_boxes(pnet0, pnet1, v, 0.8f);
 
-            print_array("score.txt", boxes.m_score);
-            print_array("x1.txt", boxes.m_x1);
-            print_array("y1.txt", boxes.m_y1);
-
-            print_array("x2.txt", boxes.m_x2);
-            print_array("y2.txt", boxes.m_y2);
-
-            print_array("dx1.txt", boxes.m_reg_dx1);
-            print_array("dy1.txt", boxes.m_reg_dy1);
-
-            print_array("dx2.txt", boxes.m_reg_dx2);
-            print_array("dy2.txt", boxes.m_reg_dy2);
-
             if (!boxes.empty())
             {
-                auto                  pick = mtcnn::nms(boxes, mtcnn::nms_method::union_value, 0.5f);
+                print_array("score.txt", boxes.m_score);
+                print_array("x1.txt", boxes.m_x1);
+                print_array("y1.txt", boxes.m_y1);
+
+                print_array("x2.txt", boxes.m_x2);
+                print_array("y2.txt", boxes.m_y2);
+
+                print_array("dx1.txt", boxes.m_reg_dx1);
+                print_array("dy1.txt", boxes.m_reg_dy1);
+
+                print_array("dx2.txt", boxes.m_reg_dx2);
+                print_array("dy2.txt", boxes.m_reg_dy2);
+
+                auto pick = mtcnn::nms(boxes, mtcnn::nms_method::union_value, 0.5f);
+
+                print_array("pick.txt", pick);
 
                 if (!pick.empty())
                 {

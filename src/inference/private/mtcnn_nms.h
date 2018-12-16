@@ -50,11 +50,11 @@ namespace mtcnn
 
             const auto& idx = sorted_s;
 
-            v16 xx1 = maximum(x1[i], index_view(x1, idx));
-            v16 yy1 = maximum(y1[i], index_view(y1, idx));
+            v16 xx1 = maximum<uint16_t>(x1[i], index_view(x1, idx));
+            v16 yy1 = maximum<uint16_t>(y1[i], index_view(y1, idx));
 
-            v16 xx2 = minimum(x2[i], index_view(x2, idx));
-            v16 yy2 = minimum(y2[i], index_view(y2, idx));
+            v16 xx2 = minimum<uint16_t>(x2[i], index_view(x2, idx));
+            v16 yy2 = minimum<uint16_t>(y2[i], index_view(y2, idx));
 
             v16 w = fold<uint16_t>(xx1, xx2, [](const uint16_t x1, const uint16_t x2)
             {
@@ -71,7 +71,7 @@ namespace mtcnn
 
             if (m == nms_method::minimum_value)
             {
-                o = div(inter, minimum(area[i], index_view(area, idx)));
+                o = div(inter, minimum<uint16_t>(area[i], index_view(area, idx)));
             }
             else
             {
@@ -83,7 +83,7 @@ namespace mtcnn
                 });
             }
 
-            v16 filtered = where_index(o, [threshold](const float v)
+            v16 filtered = where_index<uint16_t>(o, [threshold](const float v)
             {
                 return v <= threshold;
             });
