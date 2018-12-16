@@ -85,10 +85,10 @@ namespace mtcnn
         });
     }
 
-    template <typename r, typename a>
-    std::vector<r> minimum(const uint16_t c, const std::vector<a>& v)
+    template <typename r, typename a, typename b>
+    std::vector<r> minimum(const a c, const std::vector<b>& v)
     {
-        return fold<r>(c, v, [](const uint16_t x, const a y)
+        return fold<r>(c, v, [](const a x, const b y)
         {
             return (std::min(x, y));
         });
@@ -103,19 +103,21 @@ namespace mtcnn
         });
     }
 
-    std::vector<uint16_t> mul(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    template <typename r, typename a, typename b>
+    std::vector<r> mul(const std::vector<a>& v0, const std::vector<b>& v1)
     {
-        return fold<uint16_t>(v0, v1, [](const uint16_t a, const uint16_t b)
+        return fold<r>(v0, v1, [](const a x, const b y)
         {
-            return static_cast<uint16_t>(a) * static_cast<uint16_t>(b);
+            return static_cast<r>(x * y);
         });
     }
 
-    std::vector<float> div(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    template <typename r, typename a, typename b>
+    std::vector<r> div(const std::vector<a>& v0, const std::vector<b>& v1)
     {
-        return fold<float>(v0, v1, [](const uint16_t a, const uint16_t b)
+        return fold<r>(v0, v1, [](const a x, const b y)
         {
-            return static_cast<float>(a) / static_cast<float>(b);
+            return static_cast<r>(x) / static_cast<r>(y);
         });
     }
 
