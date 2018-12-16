@@ -11,11 +11,12 @@ namespace mtcnn
 
         sorted_s.resize(score.size());
 
+        uint16_t v = 0;
+
         std::generate(sorted_s.begin(), sorted_s.end(),
-            []()
+            [&v]()
         {
-            static uint16_t i = 0;
-            return i++;
+            return v++;
         });
 
         std::sort(sorted_s.begin(), sorted_s.end(), [&score](auto&& a, auto&& b)
