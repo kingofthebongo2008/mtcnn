@@ -85,7 +85,7 @@ namespace mtcnn
 
             v16 filtered = where_index(o, [threshold](const float v)
             {
-                return v < threshold;
+                return v <= threshold;
             });
 
             sorted_s = index_view(sorted_s, filtered);
