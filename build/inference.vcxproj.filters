@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"> 
+
+<ItemGroup>
+<Filter Include = "src"/>
+<Filter Include = "src\inference"/>
+<Filter Include = "src\inference\private"/>
+</ItemGroup>
+<ItemGroup>	
+<ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes_compute.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\mtcnn_bridge.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\mtcnn_nms.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\mtcnn_numpy.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\opencv_bridge.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\pch.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tensorflow_lite_c_api.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_base.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_exception.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_interpreter.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_interpreter_helper.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_interpreter_options.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_model.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\tfl_tensor.h"><Filter>src\inference\private</Filter></ClInclude>
+</ItemGroup>
+<ItemGroup>
+<Filter Include = "src"/>
+<Filter Include = "src\inference"/>
+<Filter Include = "src\inference\private"/>
+</ItemGroup>
+<ItemGroup>	
+<ClCompile Include = "..\src\inference\private\pch.cpp"><Filter>src\inference\private</Filter></ClCompile>
+</ItemGroup>
+<ItemGroup>
+<Filter Include = "src"/>
+<Filter Include = "src\inference"/>
+<Filter Include = "src\inference\private"/>
+</ItemGroup>
+<ItemGroup>	
+<ClCompile Include = "..\src\inference\private\main.cpp"><Filter>src\inference\private</Filter></ClCompile>
+</ItemGroup></Project> 

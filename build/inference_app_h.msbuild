@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"> 
-<ItemGroup> 
-<ClInclude Include = "..\src\inference\private\mtcnn_bridge.h"/>
-<ClInclude Include = "..\src\inference\private\opencv_bridge.h"/>
-<ClInclude Include = "..\src\inference\private\pch.h"/>
-<ClInclude Include = "..\src\inference\private\tensorflow_lite_c_api.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_base.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_exception.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_interpreter.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_interpreter_helper.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_interpreter_options.h"/>
-<ClInclude Include = "..\src\inference\private\tfl_model.h"/>
+
+<ItemGroup>	
+<ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes.h"/>	
+<ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes_compute.h"/>	
+<ClInclude Include = "..\src\inference\private\mtcnn_bridge.h"/>	
+<ClInclude Include = "..\src\inference\private\mtcnn_nms.h"/>	
+<ClInclude Include = "..\src\inference\private\mtcnn_numpy.h"/>	
+<ClInclude Include = "..\src\inference\private\opencv_bridge.h"/>	
+<ClInclude Include = "..\src\inference\private\pch.h"/>	
+<ClInclude Include = "..\src\inference\private\tensorflow_lite_c_api.h"/>	
+<ClInclude Include = "..\src\inference\private\tfl_base.h"/>	
+<ClInclude Include = "..\src\inference\private\tfl_exception.h"/>	
+<ClInclude Include = "..\src\inference\private\tfl_interpreter.h"/>	
+<ClInclude Include = "..\src\inference\private\tfl_interpreter_helper.h"/>	
+<ClInclude Include = "..\src\inference\private\tfl_interpreter_options.h"/>	
+<ClInclude Include = "..\src\inference\private\tfl_model.h"/>	
 <ClInclude Include = "..\src\inference\private\tfl_tensor.h"/>
-</ItemGroup> 
-</Project> 
+</ItemGroup></Project> 
