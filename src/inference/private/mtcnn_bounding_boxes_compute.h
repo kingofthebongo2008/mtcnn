@@ -54,8 +54,8 @@ namespace mtcnn
 
         const float t = threshold;
         const float s = scale;
-        const auto  stride = 2;
-        const auto  cell_size = 12;
+        const auto  stride = 2.0;
+        const auto  cell_size = 12.0;
 
         auto yx = xt::where(imap >= t); //filter
         xt::xarray<size_t> y = xt::adapt(yx[1]);
@@ -77,7 +77,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint16_t>(std::roundf((y[i] * stride + 1) / scale));
+                auto value = static_cast<uint16_t>(std::trunc((y[i] * stride + 1.0) / scale));
                 boxes.m_y1[i] = value;
             }
         }
@@ -85,7 +85,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + 1) / scale));
+                auto value = static_cast<uint16_t>(std::trunc((x[i] * stride + 1.0) / scale));
                 boxes.m_x1[i] = value;
             }
         }
@@ -93,7 +93,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint16_t>(std::roundf((x[i] * stride + cell_size - 1 + 1) / scale));
+                auto value = static_cast<uint16_t>(std::trunc((x[i] * stride + cell_size) / scale));
                 boxes.m_x2[i] = value;
             }
         }
@@ -101,7 +101,7 @@ namespace mtcnn
         {
             for (auto i = 0; i < b; ++i)
             {
-                auto value = static_cast<uint16_t> (std::roundf((y[i] * stride + cell_size - 1 + 1) / scale));
+                auto value = static_cast<uint16_t> (std::trunc((y[i] * stride + cell_size) / scale));
                 boxes.m_y2[i] = value;
             }
         }
