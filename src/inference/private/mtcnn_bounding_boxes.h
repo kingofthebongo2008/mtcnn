@@ -4,13 +4,26 @@
 
 namespace mtcnn
 {
-    struct bounding_boxes
+    template <typename t> struct boxes
+    {
+        std::vector<t> m_x1;
+        std::vector<t> m_y1;
+        std::vector<t> m_x2;
+        std::vector<t> m_y2;
+
+        using value_type = typename t;
+    };
+
+    struct bounding_boxes_data : boxes<uint16_t>
     {
         std::vector<uint16_t> m_x1;
-        std::vector<uint16_t> m_x2;
-
         std::vector<uint16_t> m_y1;
+        std::vector<uint16_t> m_x2;
         std::vector<uint16_t> m_y2;
+    };
+
+    struct bounding_boxes : bounding_boxes_data
+    {
         std::vector<float>    m_score;
 
         std::vector<float>    m_reg_dx1;
