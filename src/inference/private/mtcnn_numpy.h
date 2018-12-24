@@ -28,13 +28,13 @@ namespace mtcnn
     }
 
     template <typename r, typename a, typename op >
-    std::vector<r> fold(const uint16_t c, const std::vector<a>& v, op o)
+    std::vector<r> fold(const std::vector<a>& v, op o)
     {
         std::vector<r> res(v.size());
 
         for (auto i = 0U; i < v.size(); ++i)
         {
-            res[i] = (o(c, v[i]));
+            res[i] = (o(v[i]));
         }
         return res;
     }
@@ -70,9 +70,9 @@ namespace mtcnn
     template <typename r, typename a>
     std::vector<r> maximum(const uint16_t c, const std::vector<a>& v)
     {
-        return fold<uint16_t>(c, v, [](const uint16_t x, const a y)
+        return fold<uint16_t>( v, [c](const a y)
         {
-            return static_cast<uint16_t> (std::max(x, y));
+            return static_cast<uint16_t> (std::max(c, y));
         });
     }
 
@@ -89,9 +89,9 @@ namespace mtcnn
     template <typename r, typename a, typename b>
     std::vector<r> minimum(const a c, const std::vector<b>& v)
     {
-        return fold<r>(c, v, [](const a x, const b y)
+        return fold<r>(v, [c](const b y)
         {
-            return (std::min(x, y));
+            return (std::min(c, y));
         });
     }
 
@@ -114,6 +114,33 @@ namespace mtcnn
     }
 
     template <typename r, typename a, typename b>
+    std::vector<r> mul(const a c, const std::vector<b>& v1)
+    {
+        return fold<r>(v1, [c](const b y)
+            {
+                return static_cast<r>(c * y);
+            });
+    }
+
+    template <typename r, typename a, typename b>
+    std::vector<r> add(const std::vector<a>& v0, const std::vector<b>& v1)
+    {
+        return fold<r>(v0, v1, [](const a x, const b y)
+            {
+                return static_cast<r>(x + y);
+            });
+    }
+
+    template <typename r, typename a, typename b>
+    std::vector<r> sub(const std::vector<a>& v0, const std::vector<b>& v1)
+    {
+        return fold<r>(v0, v1, [](const a x, const b y)
+            {
+                return static_cast<r>(x - y);
+            });
+    }
+
+    template <typename r, typename a, typename b>
     std::vector<r> div(const std::vector<a>& v0, const std::vector<b>& v1)
     {
         return fold<r>(v0, v1, [](const a x, const b y)
@@ -131,5 +158,14 @@ namespace mtcnn
             res[i] = values[indices[i]];
         }
         return res;
+    }
+    
+    template <typename r, typename a>
+    std::vector<r> trunc(const std::vector<a>& v0)
+    {
+        return fold<r>(v0, [](const a x)
+            {
+                return std::trunc(x);
+            });
     }
 }
