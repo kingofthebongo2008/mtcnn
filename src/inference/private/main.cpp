@@ -10,6 +10,7 @@
 #include "mtcnn_bounding_boxes_compute.h"
 #include "mtcnn_nms.h"
 #include "mtcnn_rerec.h"
+#include "mtcnn_functions.h"
 
 namespace mtcnn
 {
@@ -155,42 +156,19 @@ int32_t main(int32_t, char*[])
                 auto regw   = mtcnn::sub<uint16_t>(total_boxes.m_x2, total_boxes.m_x1);
                 auto regh   = mtcnn::sub<uint16_t>(total_boxes.m_y2, total_boxes.m_y1);
 
-                auto x1     = mtcnn::mul<float>(regw, total_boxes.m_reg_dx1);
-                auto x2     = mtcnn::mul<float>(regw, total_boxes.m_reg_dx2);
+                mtcnn::boxes<float > b;
 
-                auto y1     = mtcnn::mul<float>(regh, total_boxes.m_reg_dy1);
-                auto y2     = mtcnn::mul<float>(regh, total_boxes.m_reg_dy2);
+                b.m_x1 = mtcnn::mul<float>(regw, total_boxes.m_reg_dx1);
+                b.m_x2 = mtcnn::mul<float>(regw, total_boxes.m_reg_dx2);
+
+                b.m_y1 = mtcnn::mul<float>(regh, total_boxes.m_reg_dy1);
+                b.m_y2 = mtcnn::mul<float>(regh, total_boxes.m_reg_dy2);
 
                 auto score  = total_boxes.m_score;
 
-                mtcnn::boxes<float > b;
-
-                {
-                    b.m_x1 = mtcnn::add<float>(x1, total_boxes.m_x1);
-                    b.m_x2 = mtcnn::add<float>(x2, total_boxes.m_x2);
-
-                    b.m_y1 = mtcnn::add<float>(y1, total_boxes.m_y1);
-                    b.m_y2 = mtcnn::add<float>(y2, total_boxes.m_y2);
-                }
-
-                b           = mtcnn::rerec(b);
-
-                mtcnn::boxes<int32_t> b0;
-
-                {
-                    b0.m_x1 = mtcnn::trunc<int32_t>(b.m_x1);
-                    b0.m_y1 = mtcnn::trunc<int32_t>(b.m_y1);
-
-                    b0.m_x2 = mtcnn::trunc<int32_t>(b.m_x2);
-                    b0.m_y2 = mtcnn::trunc<int32_t>(b.m_y2);
-                }
-
-                
-                print_array("x1.txt", x1);
-                print_array("x2.txt", x2);
-
-                print_array("y1.txt", y1);
-                print_array("y2.txt", y2);
+                b = mtcnn::add<float>(b, total_boxes);
+                b = mtcnn::rerec(b);
+                mtcnn::boxes<int32_t> b0 = mtcnn::trunc<int32_t>(b);
 
                 __debugbreak();
             }

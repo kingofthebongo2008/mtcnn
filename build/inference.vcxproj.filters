@@ -10,6 +10,7 @@
 <ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes.h"><Filter>src\inference\private</Filter></ClInclude>	
 <ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes_compute.h"><Filter>src\inference\private</Filter></ClInclude>	
 <ClInclude Include = "..\src\inference\private\mtcnn_bridge.h"><Filter>src\inference\private</Filter></ClInclude>	
+<ClInclude Include = "..\src\inference\private\mtcnn_functions.h"><Filter>src\inference\private</Filter></ClInclude>	
 <ClInclude Include = "..\src\inference\private\mtcnn_nms.h"><Filter>src\inference\private</Filter></ClInclude>	
 <ClInclude Include = "..\src\inference\private\mtcnn_numpy.h"><Filter>src\inference\private</Filter></ClInclude>	
 <ClInclude Include = "..\src\inference\private\mtcnn_pad.h"><Filter>src\inference\private</Filter></ClInclude>	

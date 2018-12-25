@@ -5,6 +5,7 @@
 <ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes.h"/>	
 <ClInclude Include = "..\src\inference\private\mtcnn_bounding_boxes_compute.h"/>	
 <ClInclude Include = "..\src\inference\private\mtcnn_bridge.h"/>	
+<ClInclude Include = "..\src\inference\private\mtcnn_functions.h"/>	
 <ClInclude Include = "..\src\inference\private\mtcnn_nms.h"/>	
 <ClInclude Include = "..\src\inference\private\mtcnn_numpy.h"/>	
 <ClInclude Include = "..\src\inference\private\mtcnn_pad.h"/>	
