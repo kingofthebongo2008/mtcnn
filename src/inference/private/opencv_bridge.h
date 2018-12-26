@@ -49,9 +49,32 @@ namespace opencv
         return o1;
     }
 
+    auto to_float(const mat& r)
+    {
+        mat o0;
+        r.convertTo(o0, CV_32FC3);
+        return o0;
+    }
+
+    auto normalize2(const mat& r)
+    {
+        //convert from 0-255 bytes to floats in the [-1;1]
+        mat o1;
+        o1 = (r - 127.5f) * (1.0f / 128.0f);
+
+        return o1;
+    }
+
+
     mat make_mat(int32_t dims, int32_t* sizes)
     {
         mat m(dims, sizes, CV_32FC1);
+        return m;
+    }
+
+    mat make_mat(void* data, int32_t dim0, int32_t dim1)
+    {
+        mat m( dim0, dim1, CV_8UC3, data);
         return m;
     }
 }
