@@ -88,6 +88,28 @@ void print_array(const char* file_name, std::vector<float>& v)
     }
 }
 
+/*
+{
+    auto shape = m3.m_numpy.shape();
+    auto s0 = shape[0];
+    auto s1 = shape[1];
+
+    std::ofstream f("img.txt", std::ofstream::out);
+
+    for (auto i = 0; i < s0; ++i)
+    {
+        for (auto j = 0; j < s1; ++j)
+        {
+            auto    v0 = m3.m_numpy[{ i, j, 0}];
+            auto    v1 = m3.m_numpy[{ i, j, 1}];
+            auto    v2 = m3.m_numpy[{ i, j, 2}];
+            f << v0 << ",\n" << v1 << ",\n" << v2 << ",\n";
+        }
+    }
+    __debugbreak();
+}
+*/
+
 
 int32_t main(int32_t, char*[])
 { 
@@ -106,6 +128,7 @@ int32_t main(int32_t, char*[])
     auto models     = mtcnn::make_models_database();
 
     auto  m0        = mtcnn::make_model("data/mtcnn.tflite");
+    auto  img       = mtcnn::make_xtensor_2<uint8_t>(r.data, w, h);
     
     //phase 1
     if (true)
@@ -159,22 +182,58 @@ int32_t main(int32_t, char*[])
 
                 mtcnn::boxes<float > b;
 
-                b.m_x1 = mtcnn::mul<float>(regw, total_boxes.m_reg_dx1);
-                b.m_x2 = mtcnn::mul<float>(regw, total_boxes.m_reg_dx2);
+                b.m_x1      = mtcnn::mul<float>(regw, total_boxes.m_reg_dx1);
+                b.m_x2      = mtcnn::mul<float>(regw, total_boxes.m_reg_dx2);
 
-                b.m_y1 = mtcnn::mul<float>(regh, total_boxes.m_reg_dy1);
-                b.m_y2 = mtcnn::mul<float>(regh, total_boxes.m_reg_dy2);
+                b.m_y1      = mtcnn::mul<float>(regh, total_boxes.m_reg_dy1);
+                b.m_y2      = mtcnn::mul<float>(regh, total_boxes.m_reg_dy2);
 
                 auto score  = total_boxes.m_score;
 
                 b = mtcnn::add<float>(b, total_boxes);
                 b = mtcnn::rerec(b);
 
-                auto b0 = mtcnn::trunc<int32_t>(b);
-                auto b1 = mtcnn::pad(b0, w, h);
-                
+                auto b0     = mtcnn::trunc<int32_t>(b);
+                auto b1     = mtcnn::pad(b0, w, h);
 
-                __debugbreak();
+                auto numbox = b0.size();
+                auto tmpimg = mtcnn::make_xtensor_4<float>(numbox, 24, 24, 3);
+
+                for (auto k = 0; k < numbox; ++k)
+                {
+                    auto local_height   = b1.m_tmph[k];
+                    auto local_width    = b1.m_tmpw[k];
+                    auto tmp            = mtcnn::make_xtensor_3<uint8_t>(b1.m_tmph[k], b1.m_tmpw[k], 3);
+                    auto s              = tmp.m_numpy.size();
+                    auto tmpimg_view    = xt::view(tmpimg.m_numpy, k, xt::all(), xt::all(), xt::all() );
+
+                    auto width          = b1.m_edx[k] - (b1.m_dx[k] - 1);
+                    auto height         = b1.m_edy[k] - (b1.m_dy[k] - 1);
+
+                    for (auto i = 0; i < height; ++i)
+                    {
+                        for (auto j = 0; j < width; ++j)
+                        {
+                            auto src_y = i + b1.m_dy[k] - 1;
+                            auto src_x = j + b1.m_dx[k] - 1;
+
+                            auto dst_y = i + b1.m_y[k] - 1;
+                            auto dst_x = j + b1.m_x[k] - 1;
+                            tmp.m_numpy[{ src_y, src_x, 0 }] = img[{ dst_y, dst_x, 0 }];
+                            tmp.m_numpy[{ src_y, src_x, 1 }] = img[{ dst_y, dst_x, 1 }];
+                            tmp.m_numpy[{ src_y, src_x, 2 }] = img[{ dst_y, dst_x, 2 }];
+                        }
+                    }
+                    std::copy(tmp.m_numpy.cbegin(), tmp.m_numpy.cend(), tmp.m_data.begin());
+
+                    opencv::mat m0 = opencv::make_mat(&tmp.m_data[0], local_height, local_width);
+                    opencv::mat m1 = opencv::resample(opencv::to_float(m0), 24, 24);
+                    opencv::mat m2 = opencv::normalize2(m1);
+                    auto        m3 = mtcnn::make_xtensor_3<float>(24, 24, 3, reinterpret_cast<const float*>(m2.data));
+                    tmpimg_view = m3.m_numpy;
+                }
+
+
             }
         }
     }
