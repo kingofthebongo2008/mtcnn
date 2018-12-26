@@ -11,6 +11,7 @@
 #include "mtcnn_nms.h"
 #include "mtcnn_rerec.h"
 #include "mtcnn_functions.h"
+#include "mtcnn_pad.h"
 
 namespace mtcnn
 {
@@ -168,7 +169,10 @@ int32_t main(int32_t, char*[])
 
                 b = mtcnn::add<float>(b, total_boxes);
                 b = mtcnn::rerec(b);
-                mtcnn::boxes<int32_t> b0 = mtcnn::trunc<int32_t>(b);
+
+                auto b0 = mtcnn::trunc<int32_t>(b);
+                auto b1 = mtcnn::pad(b0, w, h);
+                
 
                 __debugbreak();
             }

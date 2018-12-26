@@ -132,6 +132,24 @@ namespace mtcnn
     }
 
     template <typename r, typename a, typename b>
+    std::vector<r> add(const a v0, const std::vector<b>& v1)
+    {
+        return fold<r>(v1, [v0]( const b y)
+            {
+                return static_cast<r>(v0 + y);
+            });
+    }
+
+    template <typename r, typename a, typename b>
+    std::vector<r> add(const std::vector<b>& v1, const a v0 )
+    {
+        return fold<r>(v1, [v0](const b y)
+            {
+                return static_cast<r>(v0 + y);
+            });
+    }
+
+    template <typename r, typename a, typename b>
     std::vector<r> sub(const std::vector<a>& v0, const std::vector<b>& v1)
     {
         return fold<r>(v0, v1, [](const a x, const b y)
@@ -167,5 +185,24 @@ namespace mtcnn
             {
                 return std::trunc(x);
             });
+    }
+
+    template <typename r, typename a, typename b>
+    std::vector<r> operator+(const std::vector<a>& v0, const std::vector<b>& v1)
+    {
+        return add<r>(v0, v1);
+    }
+
+    template <typename r, typename a, typename b>
+    std::vector<r> operator-(const std::vector<a>& v0, const std::vector<b>& v1)
+    {
+        return sub<r>(v0, v1);
+    }
+
+    template <typename r>
+    std::vector<r> ones(size_t s)
+    {
+        std::vector<r> res(s, static_cast<r>(1.0f));
+        return res;
     }
 }

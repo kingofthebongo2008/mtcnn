@@ -12,6 +12,11 @@ namespace mtcnn
         std::vector<t> m_y2;
 
         using value_type = typename t;
+
+        size_t size() const
+        {
+            return m_x1.size(); // all vectors match
+        }
     };
 
     struct bounding_boxes_data : boxes<uint16_t>
@@ -30,11 +35,6 @@ namespace mtcnn
         std::vector<float>    m_reg_dy1;
         std::vector<float>    m_reg_dx2;
         std::vector<float>    m_reg_dy2;
-
-        size_t size() const
-        {
-            return m_score.size(); // all vectors match
-        }
 
         bool empty()
         {
