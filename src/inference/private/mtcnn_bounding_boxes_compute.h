@@ -12,30 +12,74 @@
 
 namespace mtcnn
 {
+    template <typename t>
     struct numpy_wrapper
     {
-        std::vector<float>  m_data;
-        xt::xarray<float>   m_numpy;
+        std::vector<t>  m_data;
+        xt::xarray<t>   m_numpy;
     };
+
+    template <typename t>
+    auto make_xtensor_4(size_t dim0, size_t dim1, size_t dim2, size_t dim3)
+    {
+        std::array<size_t, 4> shape = { dim0, dim1, dim2, dim3 };
+        auto size                   = dim0 * dim1 * dim2 * dim3;
+
+        numpy_wrapper<t> w;
+        w.m_data.resize(size);
+        w.m_numpy = xt::adapt(&w.m_data[0], size, xt::no_ownership(), shape);
+        return w;
+    }
+
+    template <typename t>
+    auto make_xtensor_3(size_t dim0, size_t dim1, size_t dim2)
+    {
+        std::array<size_t, 3> shape = { dim0, dim1, dim2 };
+        auto size                   = dim0 * dim1 * dim2;
+
+        numpy_wrapper<t> w;
+        w.m_data.resize(size);
+        w.m_numpy = xt::adapt(&w.m_data[0], size, xt::no_ownership(), shape);
+        return w;
+    }
+
+    template <typename t>
+    auto make_xtensor_3(size_t dim0, size_t dim1, size_t dim2, const t* data)
+    {
+        std::array<size_t, 3> shape = { dim0, dim1, dim2 };
+        auto size = dim0 * dim1 * dim2;
+
+        numpy_wrapper<t> w;
+        w.m_data.resize(size);
+        w.m_numpy = xt::adapt(data, size, xt::no_ownership(), shape);
+        return w;
+    }
 
     auto make_xtensor_4(const tensorflow_lite_c_api::output_tensor& tensor)
     {
         std::array<size_t, 4> shape = { static_cast<size_t>(tensor.dim(0)), static_cast<size_t>(tensor.dim(1)), static_cast<size_t>(tensor.dim(2)), static_cast<size_t>(tensor.dim(3)) };
-        auto size_in_floats = tensor.byte_size() / sizeof(float);
+        auto size                   = tensor.byte_size() / sizeof(float);
 
-        numpy_wrapper w;
-        w.m_data.resize(size_in_floats);
+        numpy_wrapper<float> w;
+        w.m_data.resize(size);
 
         tensor.copy_to_buffer(&w.m_data[0], tensor.byte_size());
-        w.m_numpy = xt::adapt(w.m_data, shape);
+        w.m_numpy = xt::adapt(&w.m_data[0], size, xt::no_ownership(), shape);
 
         return w;
+    }
+
+    template<typename t>
+    xt::xarray<t> make_xtensor_2(t* data, uint32_t w, uint32_t h)
+    {
+        std::array<size_t, 3> shape = { static_cast<size_t>(h), static_cast<size_t>(w), 3 };
+
+        return  xt::adapt(data, w * h * 3 * sizeof(t), xt::no_ownership(), shape);
     }
 
     xt::xarray<float> make_xtensor_2(float* data, uint32_t w, uint32_t h)
     {
         std::array<size_t, 3> shape = { static_cast<size_t>(h), static_cast<size_t>(w), 3 };
-
         return  xt::adapt(data, w * h * 3, xt::no_ownership(), shape);
     }
 
