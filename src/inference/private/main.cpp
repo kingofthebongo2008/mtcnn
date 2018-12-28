@@ -43,6 +43,30 @@ namespace mtcnn
         }
     };
 
+    struct onet_model : public model
+    {
+        onet_model(tensorflow_lite_c_api::model m
+            , tensorflow_lite_c_api::interpreter_options  o
+            , tensorflow_lite_c_api::interpreter          i) :
+            model(
+                std::move(m)
+                , std::move(o)
+                , std::move(i))
+        {
+
+        }
+
+
+
+        void resize_input_tensor(uint32_t box_count)
+        {
+            auto inter = &m_interpreter;
+            std::array<int32_t, 4> input_dims = { box_count, 48,48, 3 };
+            inter->resize_input_tensor(0, &input_dims[0], input_dims.size());
+            inter->allocate_tensors();
+        }
+    };
+
     std::array< model, 14> make_pnet_models()
     {
         constexpr std::array< const char*, 14> file_names =
@@ -90,15 +114,16 @@ namespace mtcnn
         return mtcnn::make_model<rnet_model>("data/rnet.tflite");
     }
 
-    model make_onet_model()
+    onet_model make_onet_model()
     {
-        return mtcnn::make_model<model>("data/onet.tflite");
+        return mtcnn::make_model<onet_model>("data/onet.tflite");
     }
 
     struct models_database
     {
         std::array< model, 14> m_pnet_models = make_pnet_models();
         rnet_model             m_rnet_model  = make_rnet_model();
+        onet_model             m_onet_model  = make_onet_model();
     };
 
     models_database make_models_database()
@@ -279,7 +304,7 @@ int32_t main(int32_t, char*[])
                     opencv::mat m1 = opencv::resample(opencv::to_float(m0), 24, 24);
                     opencv::mat m2 = opencv::normalize2(m1);
                     auto        m3 = mtcnn::make_xtensor_3<float>(24, 24, 3, reinterpret_cast<const float*>(m2.data));
-                    tmpimg_view = m3.m_numpy;
+                    tmpimg_view    = m3.m_numpy;
                 }
 
                 //phase 2 rnet
@@ -339,7 +364,7 @@ int32_t main(int32_t, char*[])
                         auto b1 = mtcnn::pad(b0, w, h);
 
                         auto numbox = b0.size();
-                        auto tmpimg = mtcnn::make_xtensor_4<float>(numbox, 48, 38, 3);
+                        auto tmpimg = mtcnn::make_xtensor_4<float>(numbox, 48, 48, 3);
 
                         for (auto k = 0; k < numbox; ++k)
                         {
@@ -366,17 +391,33 @@ int32_t main(int32_t, char*[])
                                     tmp.m_numpy[{ src_y, src_x, 2 }] = img[{ dst_y, dst_x, 2 }];
                                 }
                             }
+
                             std::copy(tmp.m_numpy.cbegin(), tmp.m_numpy.cend(), tmp.m_data.begin());
 
                             opencv::mat m0 = opencv::make_mat(&tmp.m_data[0], local_height, local_width);
                             opencv::mat m1 = opencv::resample(opencv::to_float(m0), 48, 48);
                             opencv::mat m2 = opencv::normalize2(m1);
                             auto        m3 = mtcnn::make_xtensor_3<float>(48, 48, 3, reinterpret_cast<const float*>(m2.data));
-                            tmpimg_view = m3.m_numpy;
+                            tmpimg_view    = m3.m_numpy;
                         }
 
                         {
-                            //models.m_rnet_model.resize_input_tensor(numbox);
+                            models.m_onet_model.resize_input_tensor(numbox);
+
+                            auto inter      = &models.m_onet_model.m_interpreter;
+                            auto onet_in    = tensorflow_lite_c_api::make_input_tensor(inter, 0);
+                            auto s1         = tmpimg.m_numpy.size();
+
+                            std::vector<float> buffer;
+                            buffer.resize(s1);
+                            std::copy(tmpimg.m_numpy.cbegin(), tmpimg.m_numpy.cend(), buffer.begin());
+                            onet_in.copy_from_buffer(&buffer[0], s1 * sizeof(float));
+
+                            auto onet0 = tensorflow_lite_c_api::make_output_tensor(inter, 0);
+                            auto onet1 = tensorflow_lite_c_api::make_output_tensor(inter, 1);
+                            auto onet2 = tensorflow_lite_c_api::make_output_tensor(inter, 2);
+
+                            inter->invoke();
 
                         }
                     }
