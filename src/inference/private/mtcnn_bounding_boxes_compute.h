@@ -64,7 +64,21 @@ namespace mtcnn
         w.m_data.resize(size);
 
         tensor.copy_to_buffer(&w.m_data[0], tensor.byte_size());
-        w.m_numpy = xt::adapt(&w.m_data[0], size, xt::no_ownership(), shape);
+        w.m_numpy = xt::adapt(&w.m_data[0], size, xt::no_ownership(), shape, xt::layout_type::row_major);
+
+        return w;
+    }
+
+    auto make_xtensor_2(const tensorflow_lite_c_api::output_tensor& tensor)
+    {
+        std::array<size_t, 2> shape = { static_cast<size_t>(tensor.dim(0)), static_cast<size_t>(tensor.dim(1)) };
+        auto size = tensor.byte_size() / sizeof(float);
+
+        numpy_wrapper<float> w;
+        w.m_data.resize(size);
+
+        tensor.copy_to_buffer(&w.m_data[0], tensor.byte_size());
+        w.m_numpy = xt::adapt(&w.m_data[0], size, xt::no_ownership(), shape, xt::layout_type::row_major);
 
         return w;
     }
@@ -74,13 +88,13 @@ namespace mtcnn
     {
         std::array<size_t, 3> shape = { static_cast<size_t>(h), static_cast<size_t>(w), 3 };
 
-        return  xt::adapt(data, w * h * 3 * sizeof(t), xt::no_ownership(), shape);
+        return  xt::adapt(data, w * h * 3 * sizeof(t), xt::no_ownership(), shape, xt::layout_type::row_major);
     }
 
     xt::xarray<float> make_xtensor_2(float* data, uint32_t w, uint32_t h)
     {
         std::array<size_t, 3> shape = { static_cast<size_t>(h), static_cast<size_t>(w), 3 };
-        return  xt::adapt(data, w * h * 3, xt::no_ownership(), shape);
+        return  xt::adapt(data, w * h * 3, xt::no_ownership(), shape, xt::layout_type::row_major);
     }
 
     bounding_boxes compute_bounding_boxes(const tensorflow_lite_c_api::output_tensor& pnet0, const tensorflow_lite_c_api::output_tensor& pnet1, const float scale = 1.0f, const float threshold = 0.8f)
@@ -106,7 +120,7 @@ namespace mtcnn
         xt::xarray<size_t> x = xt::adapt(yx[0]);
 
         auto b = y.size();
-        auto boxes = make_boxes(b);
+        auto boxes = make_bounding_boxes(b);
 
         //suitable for concurrent execution
 
