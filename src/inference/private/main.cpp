@@ -332,8 +332,54 @@ int32_t main(int32_t, char*[])
                         boxes           = mtcnn::rerec(boxes);
                     }
 
-                    
-                    
+                    //phase 3 onet
+                    if (!boxes.empty())
+                    {
+                        auto b0 = mtcnn::trunc(boxes);
+                        auto b1 = mtcnn::pad(b0, w, h);
+
+                        auto numbox = b0.size();
+                        auto tmpimg = mtcnn::make_xtensor_4<float>(numbox, 48, 38, 3);
+
+                        for (auto k = 0; k < numbox; ++k)
+                        {
+                            auto local_height = b1.m_tmph[k];
+                            auto local_width = b1.m_tmpw[k];
+                            auto tmp = mtcnn::make_xtensor_3<uint8_t>(b1.m_tmph[k], b1.m_tmpw[k], 3);
+                            auto s = tmp.m_numpy.size();
+                            auto tmpimg_view = xt::view(tmpimg.m_numpy, k, xt::all(), xt::all(), xt::all());
+
+                            auto width = b1.m_edx[k] - (b1.m_dx[k] - 1);
+                            auto height = b1.m_edy[k] - (b1.m_dy[k] - 1);
+
+                            for (auto i = 0; i < height; ++i)
+                            {
+                                for (auto j = 0; j < width; ++j)
+                                {
+                                    auto src_y = static_cast<int32_t>(i + b1.m_dy[k] - 1);
+                                    auto src_x = static_cast<int32_t>(j + b1.m_dx[k] - 1);
+
+                                    auto dst_y = static_cast<int32_t>(i + b1.m_y[k] - 1);
+                                    auto dst_x = static_cast<int32_t>(j + b1.m_x[k] - 1);
+                                    tmp.m_numpy[{ src_y, src_x, 0 }] = img[{ dst_y, dst_x, 0 }];
+                                    tmp.m_numpy[{ src_y, src_x, 1 }] = img[{ dst_y, dst_x, 1 }];
+                                    tmp.m_numpy[{ src_y, src_x, 2 }] = img[{ dst_y, dst_x, 2 }];
+                                }
+                            }
+                            std::copy(tmp.m_numpy.cbegin(), tmp.m_numpy.cend(), tmp.m_data.begin());
+
+                            opencv::mat m0 = opencv::make_mat(&tmp.m_data[0], local_height, local_width);
+                            opencv::mat m1 = opencv::resample(opencv::to_float(m0), 48, 48);
+                            opencv::mat m2 = opencv::normalize2(m1);
+                            auto        m3 = mtcnn::make_xtensor_3<float>(48, 48, 3, reinterpret_cast<const float*>(m2.data));
+                            tmpimg_view = m3.m_numpy;
+                        }
+
+                        {
+                            //models.m_rnet_model.resize_input_tensor(numbox);
+
+                        }
+                    }
                 }
 
             }
