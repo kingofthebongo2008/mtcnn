@@ -45,9 +45,22 @@ namespace mtcnn
         tensorflow_lite_c_api::model                m_model;
         tensorflow_lite_c_api::interpreter_options  m_options;
         tensorflow_lite_c_api::interpreter          m_interpreter;
+
+        model(      tensorflow_lite_c_api::model m
+                ,   tensorflow_lite_c_api::interpreter_options  o
+                ,   tensorflow_lite_c_api::interpreter          i):
+
+                m_model(std::move(m))
+                , m_options(std::move(o))
+                , m_interpreter(std::move(i))
+                {
+
+                }
+
     };
 
-    inline model make_model(const char* model_file)
+    template <typename t>
+    inline t make_model(const char* model_file)
     {
         tensorflow_lite_c_api::model                m(model_file);
         tensorflow_lite_c_api::interpreter_options  o;
@@ -55,7 +68,7 @@ namespace mtcnn
         o.set_num_threads(8);
         tensorflow_lite_c_api::interpreter          i(m, o);
         i.allocate_tensors();
-        return { std::move(m), std::move(o), std::move(i) };
+        return t(std::move(m), std::move(o), std::move(i));
     }
 
 }

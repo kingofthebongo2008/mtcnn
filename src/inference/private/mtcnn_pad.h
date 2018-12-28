@@ -7,35 +7,35 @@ namespace mtcnn
 {
     struct padded_boxes
     {
-        std::vector<int32_t> m_dy;
-        std::vector<int32_t> m_edy;
+        std::vector<float> m_dy;
+        std::vector<float> m_edy;
 
-        std::vector<int32_t> m_dx;
-        std::vector<int32_t> m_edx;
+        std::vector<float> m_dx;
+        std::vector<float> m_edx;
 
-        std::vector<int32_t> m_y;
-        std::vector<int32_t> m_ey;
+        std::vector<float>   m_y;
+        std::vector<float>   m_ey;
 
-        std::vector<int32_t> m_x;
-        std::vector<int32_t> m_ex;
+        std::vector<float>   m_x;
+        std::vector<float>   m_ex;
 
-        std::vector<int32_t> m_tmpw;
-        std::vector<int32_t> m_tmph;
+        std::vector<float> m_tmpw;
+        std::vector<float> m_tmph;
     };
 
     template <typename a>
     padded_boxes pad(const a& s, int32_t w, int32_t h)
     {
-        auto tmpw = add<int32_t>(1, sub<int32_t>(s.m_x2, s.m_x1));
-        auto tmph = add<int32_t>(1, sub<int32_t>(s.m_y2, s.m_y1));
+        auto tmpw = add<float>(1, sub<float>(s.m_x2, s.m_x1));
+        auto tmph = add<float>(1, sub<float>(s.m_y2, s.m_y1));
 
         auto numbox = s.size();
 
         auto edx    = tmpw;
         auto edy    = tmph;
 
-        auto dx     = ones<int32_t>(numbox);
-        auto dy     = ones<int32_t>(numbox);
+        auto dx     = ones<float>(numbox);
+        auto dy     = ones<float>(numbox);
 
         auto x      = s.m_x1;
         auto y      = s.m_y1;
@@ -87,11 +87,11 @@ namespace mtcnn
         r.m_dx = std::move(dx);
         r.m_edx = std::move(edx);
 
-        r.m_y = std::move(y);
-        r.m_ey = std::move(ey);
+        r.m_y   = std::move(y);
+        r.m_ey  = std::move(ey);
 
-        r.m_x = std::move(x);
-        r.m_ex = std::move(ex);
+        r.m_x   = std::move(x);
+        r.m_ex  = std::move(ex);
 
         r.m_tmpw = std::move(tmpw);
         r.m_tmph = std::move(tmph);

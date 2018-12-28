@@ -4,30 +4,32 @@
 
 namespace mtcnn
 {
-    template <typename t> struct boxes
+    struct boxes
     {
-        std::vector<t> m_x1;
-        std::vector<t> m_y1;
-        std::vector<t> m_x2;
-        std::vector<t> m_y2;
+        std::vector<float> m_x1;
+        std::vector<float> m_y1;
+        std::vector<float> m_x2;
+        std::vector<float> m_y2;
 
-        using value_type = typename t;
+        using value_type = float;
 
         size_t size() const
         {
             return m_x1.size(); // all vectors match
         }
-    };
 
-    struct bounding_boxes_data : boxes<uint16_t>
+        bool empty() const
+        {
+            return size() == 0;
+        }
+    };
+    
+    struct boxes_with_score : public boxes
     {
-        std::vector<uint16_t> m_x1;
-        std::vector<uint16_t> m_y1;
-        std::vector<uint16_t> m_x2;
-        std::vector<uint16_t> m_y2;
+        std::vector<float>    m_score;
     };
 
-    struct bounding_boxes : bounding_boxes_data
+    struct bounding_boxes : boxes_with_score
     {
         std::vector<float>    m_score;
 
@@ -57,7 +59,7 @@ namespace mtcnn
         }
     };
 
-    bounding_boxes make_boxes(size_t s)
+    bounding_boxes make_bounding_boxes(size_t s)
     {
         bounding_boxes r;
 
@@ -77,8 +79,38 @@ namespace mtcnn
         return r;
     }
 
+    boxes_with_score make_boxes_with_score(size_t s)
+    {
+        boxes_with_score r;
 
-    bounding_boxes index_bounding_boxes(const bounding_boxes& b, const std::vector<uint16_t> indices)
+        r.m_x1.resize(s);
+        r.m_x2.resize(s);
+
+        r.m_y1.resize(s);
+        r.m_y2.resize(s);
+
+        r.m_score.resize(s);
+
+        return r;
+    }
+
+    template <typename boxes>
+    boxes index_bounding_boxes(const boxes& b, const std::vector<uint16_t> indices)
+    {
+        boxes r;
+
+        r.m_x1 = index_view(b.m_x1, indices);
+        r.m_x2 = index_view(b.m_x2, indices);
+        r.m_y1 = index_view(b.m_y1, indices);
+        r.m_y2 = index_view(b.m_y2, indices);
+
+        r.m_score = index_view(b.m_score, indices);
+
+        return r;
+    }
+
+    template <>
+    bounding_boxes index_bounding_boxes<bounding_boxes>(const bounding_boxes& b, const std::vector<uint16_t> indices)
     {
         bounding_boxes r;
 

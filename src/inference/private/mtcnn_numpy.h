@@ -70,9 +70,10 @@ namespace mtcnn
     template <typename r, typename a>
     std::vector<r> maximum(const uint16_t c, const std::vector<a>& v)
     {
-        return fold<uint16_t>( v, [c](const a y)
+        auto c0 = static_cast<r>(c);
+        return fold<r>( v, [c0](const a y)
         {
-            return static_cast<uint16_t> (std::max(c, y));
+            return std::max(c0, y);
         });
     }
 
@@ -89,18 +90,19 @@ namespace mtcnn
     template <typename r, typename a, typename b>
     std::vector<r> minimum(const a c, const std::vector<b>& v)
     {
-        return fold<r>(v, [c](const b y)
+        auto c0 = static_cast<r>(c);
+        return fold<r>(v, [c0](const b y)
         {
-            return (std::min(c, y));
+            return (std::min(c0, y));
         });
     }
 
     template <typename r, typename a, typename b>
-    std::vector<r> minimum(const std::vector<uint16_t>& v0, const std::vector<uint16_t>& v1)
+    std::vector<r> minimum(const std::vector<a>& v0, const std::vector<b>& v1)
     {
         return fold<r>(v0, v1, [](const a x, const b y)
         {
-            return static_cast<uint16_t>(std::min(x, y));
+            return static_cast<r> (std::min(x, y));
         });
     }
 
@@ -183,7 +185,7 @@ namespace mtcnn
     {
         return fold<r>(v0, [](const a x)
             {
-                return std::trunc(x);
+                return static_cast<r>(std::trunc(x));
             });
     }
 

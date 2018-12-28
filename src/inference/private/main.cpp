@@ -12,10 +12,38 @@
 #include "mtcnn_rerec.h"
 #include "mtcnn_functions.h"
 #include "mtcnn_pad.h"
+#include "mtcnn_bbreg.h"
+
+#include <xtensor/xarray.hpp>
+#include <xtensor/xview.hpp>
 
 namespace mtcnn
 {
-    std::array< model, 14> make_models()
+    struct rnet_model : public model
+    {
+        rnet_model(tensorflow_lite_c_api::model m
+            , tensorflow_lite_c_api::interpreter_options  o
+            , tensorflow_lite_c_api::interpreter          i) :
+            model( 
+                std::move(m)
+                , std::move(o)
+                , std::move(i))
+        {
+
+        }
+
+
+
+        void resize_input_tensor(uint32_t box_count)
+        {
+            auto inter = &m_interpreter;
+            std::array<int32_t, 4> input_dims = { box_count, 24,24, 3 };
+            inter->resize_input_tensor(0, &input_dims[0], input_dims.size());
+            inter->allocate_tensors();
+        }
+    };
+
+    std::array< model, 14> make_pnet_models()
     {
         constexpr std::array< const char*, 14> file_names =
         {
@@ -37,29 +65,40 @@ namespace mtcnn
 
         return
         {
-            mtcnn::make_model(file_names[0]),
-            mtcnn::make_model(file_names[1]),
-            mtcnn::make_model(file_names[2]),
-            mtcnn::make_model(file_names[3]),
+            mtcnn::make_model<model>(file_names[0]),
+            mtcnn::make_model<model>(file_names[1]),
+            mtcnn::make_model<model>(file_names[2]),
+            mtcnn::make_model<model>(file_names[3]),
 
-            mtcnn::make_model(file_names[4]),
-            mtcnn::make_model(file_names[5]),
-            mtcnn::make_model(file_names[6]),
-            mtcnn::make_model(file_names[7]),
+            mtcnn::make_model<model>(file_names[4]),
+            mtcnn::make_model<model>(file_names[5]),
+            mtcnn::make_model<model>(file_names[6]),
+            mtcnn::make_model<model>(file_names[7]),
 
-            mtcnn::make_model(file_names[8]),
-            mtcnn::make_model(file_names[9]),
-            mtcnn::make_model(file_names[10]),
-            mtcnn::make_model(file_names[11]),
+            mtcnn::make_model<model>(file_names[8]),
+            mtcnn::make_model<model>(file_names[9]),
+            mtcnn::make_model<model>(file_names[10]),
+            mtcnn::make_model<model>(file_names[11]),
 
-            mtcnn::make_model(file_names[12]),
-            mtcnn::make_model(file_names[13])
+            mtcnn::make_model<model>(file_names[12]),
+            mtcnn::make_model<model>(file_names[13])
         };
+    }
+
+    rnet_model make_rnet_model()
+    {
+        return mtcnn::make_model<rnet_model>("data/rnet.tflite");
+    }
+
+    model make_onet_model()
+    {
+        return mtcnn::make_model<model>("data/onet.tflite");
     }
 
     struct models_database
     {
-        std::array< model, 14> m_models = make_models();
+        std::array< model, 14> m_pnet_models = make_pnet_models();
+        rnet_model             m_rnet_model  = make_rnet_model();
     };
 
     models_database make_models_database()
@@ -110,6 +149,17 @@ void print_array(const char* file_name, std::vector<float>& v)
 }
 */
 
+template <typename it>
+inline xt::xkeep_slice<std::ptrdiff_t> keep(it begin, it end)
+{
+    using slice_type = xt::xkeep_slice<std::ptrdiff_t>;
+    using container_type = typename slice_type::container_type;
+    container_type tmp;
+    tmp.resize(end - begin);
+    std::copy(begin, end, tmp.begin());
+    return slice_type(std::move(tmp));
+}
+
 
 int32_t main(int32_t, char*[])
 { 
@@ -127,7 +177,6 @@ int32_t main(int32_t, char*[])
     auto scales     = mtcnn::make_scales(w, h, mtcnn::minimum_face_size_px, mtcnn::initial_scale);
     auto models     = mtcnn::make_models_database();
 
-    auto  m0        = mtcnn::make_model("data/mtcnn.tflite");
     auto  img       = mtcnn::make_xtensor_2<uint8_t>(r.data, w, h);
     
     //phase 1
@@ -142,7 +191,7 @@ int32_t main(int32_t, char*[])
             auto ws      = std::ceilf(w * v);
             auto hs      = std::ceilf(h * v);
             auto img0    = opencv::normalize(opencv::resample(r, hs, ws));
-            auto inter   = &models.m_models[i].m_interpreter;
+            auto inter   = &models.m_pnet_models[i].m_interpreter;
 
             auto pnet_in = tensorflow_lite_c_api::make_input_tensor(inter, 0);
             auto s0      = pnet_in.byte_size();
@@ -180,7 +229,7 @@ int32_t main(int32_t, char*[])
                 auto regw   = mtcnn::sub<uint16_t>(total_boxes.m_x2, total_boxes.m_x1);
                 auto regh   = mtcnn::sub<uint16_t>(total_boxes.m_y2, total_boxes.m_y1);
 
-                mtcnn::boxes<float > b;
+                mtcnn::boxes b;
 
                 b.m_x1      = mtcnn::mul<float>(regw, total_boxes.m_reg_dx1);
                 b.m_x2      = mtcnn::mul<float>(regw, total_boxes.m_reg_dx2);
@@ -190,10 +239,10 @@ int32_t main(int32_t, char*[])
 
                 auto score  = total_boxes.m_score;
 
-                b = mtcnn::add<float>(b, total_boxes);
+                b = mtcnn::add(b, total_boxes);
                 b = mtcnn::rerec(b);
 
-                auto b0     = mtcnn::trunc<int32_t>(b);
+                auto b0     = mtcnn::trunc(b);
                 auto b1     = mtcnn::pad(b0, w, h);
 
                 auto numbox = b0.size();
@@ -214,11 +263,11 @@ int32_t main(int32_t, char*[])
                     {
                         for (auto j = 0; j < width; ++j)
                         {
-                            auto src_y = i + b1.m_dy[k] - 1;
-                            auto src_x = j + b1.m_dx[k] - 1;
+                            auto src_y = static_cast<int32_t>(i + b1.m_dy[k] - 1);
+                            auto src_x = static_cast<int32_t>(j + b1.m_dx[k] - 1);
 
-                            auto dst_y = i + b1.m_y[k] - 1;
-                            auto dst_x = j + b1.m_x[k] - 1;
+                            auto dst_y = static_cast<int32_t>(i + b1.m_y[k] - 1);
+                            auto dst_x = static_cast<int32_t>(j + b1.m_x[k] - 1);
                             tmp.m_numpy[{ src_y, src_x, 0 }] = img[{ dst_y, dst_x, 0 }];
                             tmp.m_numpy[{ src_y, src_x, 1 }] = img[{ dst_y, dst_x, 1 }];
                             tmp.m_numpy[{ src_y, src_x, 2 }] = img[{ dst_y, dst_x, 2 }];
@@ -233,6 +282,59 @@ int32_t main(int32_t, char*[])
                     tmpimg_view = m3.m_numpy;
                 }
 
+                //phase 2 rnet
+                {
+
+                    models.m_rnet_model.resize_input_tensor(numbox);
+
+                    auto inter = &models.m_rnet_model.m_interpreter;
+                    auto rnet_in = tensorflow_lite_c_api::make_input_tensor(inter, 0);
+                    auto s1      = tmpimg.m_numpy.size();
+
+                    std::vector<float> buffer;
+                    buffer.resize(s1);
+                    std::copy(tmpimg.m_numpy.cbegin(), tmpimg.m_numpy.cend(), buffer.begin());
+                    rnet_in.copy_from_buffer(&buffer[0], s1 * sizeof(float));
+
+                    auto rnet0 = tensorflow_lite_c_api::make_output_tensor(inter, 0);
+                    auto rnet1 = tensorflow_lite_c_api::make_output_tensor(inter, 1);
+                    inter->invoke();
+
+                    auto t0 = mtcnn::make_xtensor_2(rnet0);
+                    auto t1 = mtcnn::make_xtensor_2(rnet1);
+
+                    t0.m_numpy = xt::transpose(t0.m_numpy);
+                    t1.m_numpy = xt::transpose(t1.m_numpy);
+
+                    auto score = xt::view(t0.m_numpy, 1, xt::all() );
+                    auto ipass = xt::where(score > 0.8f);
+                   
+                    mtcnn::boxes_with_score boxes = mtcnn::make_boxes_with_score(ipass[0].size());
+
+                    for (auto i = 0U; i < ipass[0].size(); ++i)
+                    {
+                        auto index = ipass[0][i];
+
+                        boxes.m_x1[i]       = b0.m_x1[index];
+                        boxes.m_y1[i]       = b0.m_y1[index];
+                        boxes.m_x2[i]       = b0.m_x2[index];
+                        boxes.m_y2[i]       = b0.m_y2[index];
+                        boxes.m_score[i]    = score[index];
+                    }
+
+                    if (!boxes.empty())
+                    {
+                        auto mv         = xt::view(t1.m_numpy, xt::all(), keep(ipass[0].begin(), ipass[0].end()));
+                        pick            = mtcnn::nms(boxes, mtcnn::nms_method::union_value, 0.7f);
+                        boxes           = mtcnn::index_bounding_boxes(boxes, pick);
+                        auto mv_picked  = xt::view(mv, xt::all(), keep(pick.begin(), pick.end()));
+                        boxes           = mtcnn::bbreg(boxes, mv_picked);
+                        boxes           = mtcnn::rerec(boxes);
+                    }
+
+                    
+                    
+                }
 
             }
         }
