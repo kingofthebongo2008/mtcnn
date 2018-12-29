@@ -94,6 +94,20 @@ namespace mtcnn
         return r;
     }
 
+    boxes make_boxes(size_t s)
+    {
+        boxes r;
+
+        r.m_x1.resize(s);
+        r.m_x2.resize(s);
+
+        r.m_y1.resize(s);
+        r.m_y2.resize(s);
+
+
+        return r;
+    }
+
     template <typename boxes>
     boxes index_bounding_boxes(const boxes& b, const std::vector<uint16_t> indices)
     {
