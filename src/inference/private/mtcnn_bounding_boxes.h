@@ -23,6 +23,34 @@ namespace mtcnn
             return size() == 0;
         }
     };
+
+    struct points
+    {
+        //landmark positions
+        std::vector<float> m_x1;
+        std::vector<float> m_y1;
+        std::vector<float> m_x2;
+        std::vector<float> m_y2;
+        std::vector<float> m_x3;
+        std::vector<float> m_y3;
+
+        std::vector<float> m_x4;
+        std::vector<float> m_y4;
+        std::vector<float> m_x5;
+        std::vector<float> m_y5;
+
+        using value_type = float;
+
+        size_t size() const
+        {
+            return m_x1.size(); // all vectors match
+        }
+
+        bool empty() const
+        {
+            return size() == 0;
+        }
+    };
     
     struct boxes_with_score : public boxes
     {
@@ -108,6 +136,25 @@ namespace mtcnn
         return r;
     }
 
+    points make_points(size_t s)
+    {
+        points r;
+
+        r.m_x1.resize(s);
+        r.m_x2.resize(s);
+        r.m_x3.resize(s);
+        r.m_x4.resize(s);
+        r.m_x5.resize(s);
+
+        r.m_y1.resize(s);
+        r.m_y2.resize(s);
+        r.m_y3.resize(s);
+        r.m_y4.resize(s);
+        r.m_y5.resize(s);
+
+        return r;
+    }
+
     template <typename boxes>
     boxes index_bounding_boxes(const boxes& b, const std::vector<uint16_t> indices)
     {
@@ -119,7 +166,6 @@ namespace mtcnn
         r.m_y2 = index_view(b.m_y2, indices);
 
         r.m_score = index_view(b.m_score, indices);
-
         return r;
     }
 
@@ -140,6 +186,27 @@ namespace mtcnn
         r.m_reg_dx2 = index_view(b.m_reg_dx2, indices);
         r.m_reg_dy2 = index_view(b.m_reg_dy2, indices);
 
+        return r;
+    }
+
+    template <>
+    points index_bounding_boxes<points>(const points& b, const std::vector<uint16_t> indices)
+    {
+        points r;
+
+        r.m_x1 = index_view(b.m_x1, indices);
+        r.m_x2 = index_view(b.m_x2, indices);
+        r.m_x3 = index_view(b.m_x3, indices);
+        r.m_x4 = index_view(b.m_x4, indices);
+        r.m_x5 = index_view(b.m_x5, indices);
+
+
+        r.m_y1 = index_view(b.m_y1, indices);
+        r.m_y2 = index_view(b.m_y2, indices);
+        r.m_y3 = index_view(b.m_y3, indices);
+        r.m_y4 = index_view(b.m_y4, indices);
+        r.m_y5 = index_view(b.m_y5, indices);
+        
         return r;
     }
 
