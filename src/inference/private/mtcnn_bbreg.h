@@ -14,7 +14,7 @@ namespace mtcnn
         auto w = add<float>(1.0f, sub<float>(b.m_x2, b.m_x1));
         auto h = add<float>(1.0f, sub<float>(b.m_y2, b.m_y1));
 
-        box r;
+        box r = b;
 
         auto s = b.size();
         r.m_x1.resize(s);
