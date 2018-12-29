@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma optimize("",off)
 #include <vector>
 
 #include "mtcnn_bounding_boxes.h"
