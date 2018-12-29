@@ -419,6 +419,62 @@ int32_t main(int32_t, char*[])
 
                             inter->invoke();
 
+                            auto t0 = mtcnn::make_xtensor_2(onet0);
+                            auto t1 = mtcnn::make_xtensor_2(onet1);
+                            auto t2 = mtcnn::make_xtensor_2(onet2);
+
+                            t0.m_numpy = xt::transpose(t0.m_numpy);
+                            t1.m_numpy = xt::transpose(t1.m_numpy);
+                           
+                            auto score = xt::view(t0.m_numpy, 1, xt::all());
+                            auto ipass = xt::where(score > 0.8f);
+
+                            for (auto i : t0.m_numpy)
+                            {
+                                std::cout << i << ",";
+                            }
+                            std::cout << "\n";
+
+                            for (auto i : t1.m_numpy)
+                            {
+                                std::cout << i << ",";
+                            }
+                            std::cout << "\n";
+
+                            for (auto i : t2.m_numpy)
+                            {
+                                std::cout << i << ",";
+                            }
+
+                            mtcnn::boxes_with_score boxes  = mtcnn::make_boxes_with_score(ipass[0].size());
+                            mtcnn::boxes            points = mtcnn::make_boxes(ipass[0].size());
+
+                            for (auto i = 0U; i < ipass[0].size(); ++i)
+                            {
+                                auto index = ipass[0][i];
+
+                                boxes.m_x1[i] = b0.m_x1[index];
+                                boxes.m_y1[i] = b0.m_y1[index];
+                                boxes.m_x2[i] = b0.m_x2[index];
+                                boxes.m_y2[i] = b0.m_y2[index];
+                                boxes.m_score[i] = score[index];
+                            }
+
+                            for (auto i = 0U; i < ipass[0].size(); ++i)
+                            {
+                                int32_t index = ipass[0][i];
+                                
+                                points.m_x1[i] = t2.m_numpy[{ index, 0}];
+                                points.m_y1[i] = t2.m_numpy[{ index, 1}];
+                                points.m_x2[i] = t2.m_numpy[{ index, 2}];
+                                points.m_y2[i] = t2.m_numpy[{ index, 3}];
+                            }
+
+                            if (!boxes.empty())
+                            {
+                                auto mv = xt::view(t1.m_numpy, xt::all(), keep(ipass[0].begin(), ipass[0].end()));
+
+                            }
                         }
                     }
                 }
