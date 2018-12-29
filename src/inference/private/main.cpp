@@ -172,6 +172,31 @@ void print_array(const char* file_name, std::vector<float>& v)
     }
     __debugbreak();
 }
+
+
+{
+    std::fstream f("t0.txt", std::iostream::out);
+    for (auto i : t0.m_numpy)
+    {
+        f << i << "\n";
+    }
+}
+
+{
+    std::fstream f("t1.txt", std::iostream::out);
+    for (auto i : t1.m_numpy)
+    {
+        f << i << "\n";
+    }
+}
+
+{
+    std::fstream f("t2.txt", std::iostream::out);
+    for (auto i : t2.m_numpy)
+    {
+        f << i << "\n";
+    }
+}
 */
 
 template <typename it>
@@ -210,7 +235,7 @@ int32_t main(int32_t, char*[])
         mtcnn::bounding_boxes total_boxes;
 
         //Phase 1
-        for (auto i = 8U; i < scales.size(); ++i)
+        for (auto i = 0U; i < scales.size(); ++i)
         {
             auto v       = scales[i];
             auto ws      = std::ceilf(w * v);
@@ -425,29 +450,14 @@ int32_t main(int32_t, char*[])
 
                             t0.m_numpy = xt::transpose(t0.m_numpy);
                             t1.m_numpy = xt::transpose(t1.m_numpy);
-                           
+
                             auto score = xt::view(t0.m_numpy, 1, xt::all());
                             auto ipass = xt::where(score > 0.8f);
 
-                            for (auto i : t0.m_numpy)
-                            {
-                                std::cout << i << ",";
-                            }
-                            std::cout << "\n";
+                            
 
-                            for (auto i : t1.m_numpy)
-                            {
-                                std::cout << i << ",";
-                            }
-                            std::cout << "\n";
-
-                            for (auto i : t2.m_numpy)
-                            {
-                                std::cout << i << ",";
-                            }
-
-                            mtcnn::boxes_with_score boxes  = mtcnn::make_boxes_with_score(ipass[0].size());
-                            mtcnn::boxes            points = mtcnn::make_boxes(ipass[0].size());
+                            mtcnn::boxes_with_score boxes   = mtcnn::make_boxes_with_score(ipass[0].size());
+                            mtcnn::points            points = mtcnn::make_points(ipass[0].size());
 
                             for (auto i = 0U; i < ipass[0].size(); ++i)
                             {
@@ -460,20 +470,33 @@ int32_t main(int32_t, char*[])
                                 boxes.m_score[i] = score[index];
                             }
 
+                            auto w = mtcnn::add<float>(1.0f, mtcnn::sub<float>(boxes.m_x2, boxes.m_x1));
+                            auto h = mtcnn::add<float>(1.0f, mtcnn::sub<float>(boxes.m_y2, boxes.m_y1));
+
                             for (auto i = 0U; i < ipass[0].size(); ++i)
                             {
                                 int32_t index = ipass[0][i];
                                 
-                                points.m_x1[i] = t2.m_numpy[{ index, 0}];
-                                points.m_y1[i] = t2.m_numpy[{ index, 1}];
-                                points.m_x2[i] = t2.m_numpy[{ index, 2}];
-                                points.m_y2[i] = t2.m_numpy[{ index, 3}];
+                                points.m_x1[i] = w[i] * (t2.m_numpy[{ index, 0}] + 1.0f) / 2.0f + boxes.m_x1[i] - 1.0f;
+                                points.m_x2[i] = w[i] * (t2.m_numpy[{ index, 2}] + 1.0f) / 2.0f + boxes.m_x1[i] - 1.0f;
+                                points.m_x3[i] = w[i] * (t2.m_numpy[{ index, 4}] + 1.0f) / 2.0f + boxes.m_x1[i] - 1.0f;
+                                points.m_x4[i] = w[i] * (t2.m_numpy[{ index, 6}] + 1.0f) / 2.0f + boxes.m_x1[i] - 1.0f;
+                                points.m_x5[i] = w[i] * (t2.m_numpy[{ index, 8}] + 1.0f) / 2.0f + boxes.m_x1[i] - 1.0f;
+
+                                points.m_y1[i] = h[i] * (t2.m_numpy[{ index, 1}] + 1.0f) / 2.0f + boxes.m_y1[i] - 1.0f;
+                                points.m_y2[i] = h[i] * (t2.m_numpy[{ index, 3}] + 1.0f) / 2.0f + boxes.m_y1[i] - 1.0f;
+                                points.m_y3[i] = h[i] * (t2.m_numpy[{ index, 5}] + 1.0f) / 2.0f + boxes.m_y1[i] - 1.0f;
+                                points.m_y4[i] = h[i] * (t2.m_numpy[{ index, 7}] + 1.0f) / 2.0f + boxes.m_y1[i] - 1.0f;
+                                points.m_y5[i] = h[i] * (t2.m_numpy[{ index, 9}] + 1.0f) / 2.0f + boxes.m_y1[i] - 1.0f;
                             }
 
                             if (!boxes.empty())
                             {
                                 auto mv = xt::view(t1.m_numpy, xt::all(), keep(ipass[0].begin(), ipass[0].end()));
-
+                                boxes   = mtcnn::bbreg(boxes, mv);
+                                pick    = mtcnn::nms(boxes, mtcnn::nms_method::minimum_value, 0.7f);
+                                boxes   = mtcnn::index_bounding_boxes(boxes, pick);
+                                points  = mtcnn::index_bounding_boxes(points, pick);
                             }
                         }
                     }
